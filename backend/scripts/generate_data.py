@@ -117,10 +117,12 @@ def edge_ring_severity(reflected_w: float) -> float:
 def generate(engine: Engine, seed: int = DEFAULT_SEED) -> dict[str, int]:
     """Drop and rebuild every table, then fill it. Returns row counts per table."""
     rng = np.random.default_rng(seed)
-    Base.metadata.drop_all(engine)
+    # Rebuild the fab tables only; document chunks (M4) are kept.
+    fab_tables = [t for t in Base.metadata.sorted_tables if t.name != "doc_chunks"]
+    Base.metadata.drop_all(engine, tables=fab_tables)
     init_db(engine)
 
-    rows: dict[str, list[dict]] = {t: [] for t in Base.metadata.tables}
+    rows: dict[str, list[dict]] = {t.name: [] for t in fab_tables}
 
     # --- Static: route, tools, chambers ---------------------------------------------
     tool_area: dict[str, str] = {}

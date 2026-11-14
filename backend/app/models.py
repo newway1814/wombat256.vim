@@ -21,6 +21,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -191,3 +192,17 @@ class AuditLog(Base):
     actor: Mapped[str] = mapped_column(String(64))  # "agent" or a user name
     action: Mapped[str] = mapped_column(String(64))
     detail: Mapped[str] = mapped_column(Text)
+
+
+class DocChunk(Base):
+    """One section of an SOP or maintenance log, with its embedding (M4)."""
+
+    __tablename__ = "doc_chunks"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # e.g. SOP-ETCH-001#3
+    doc_id: Mapped[str] = mapped_column(String(32), index=True)
+    doc_title: Mapped[str] = mapped_column(String(200))
+    heading: Mapped[str] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text)
+    embedder: Mapped[str] = mapped_column(String(64), index=True)
+    embedding: Mapped[bytes] = mapped_column(LargeBinary)  # float32 vector

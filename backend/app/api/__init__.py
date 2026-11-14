@@ -20,4 +20,4 @@ def _close_db(_exc):
         session.close()
 
 
-from . import chambers, health, lots, wafers  # noqa: E402, F401  (registers routes)
+from . import chambers, docs, health, lots, wafers  # noqa: E402, F401  (registers routes)

@@ -5,6 +5,7 @@ from flask import Flask
 from .config import Config
 from .db import init_db, make_engine, make_session_factory
 from .errors import register_error_handlers
+from .rag.embed import make_embedder
 
 
 def create_app(config: type[Config] | None = None) -> Flask:
@@ -20,6 +21,9 @@ def create_app(config: type[Config] | None = None) -> Flask:
     init_db(engine)
     app.extensions["db_engine"] = engine
     app.extensions["db_session"] = make_session_factory(engine)
+    app.extensions["embedder"] = make_embedder(
+        app.config["EMBEDDER"], app.config["OPENAI_API_KEY"], app.config["EMBEDDING_MODEL"]
+    )
 
     from .api import api_bp
 
