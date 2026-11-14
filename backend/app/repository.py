@@ -159,3 +159,14 @@ def fdc_by_lot(s: Session, chamber_id: str, column):
         .order_by(FdcSummary.run_at)
     )
     return s.execute(q).all()
+
+
+def alarms_of_chamber(s: Session, chamber_id: str, start: datetime | None, end: datetime | None):
+    from .models import Alarm
+
+    q = select(Alarm).where(Alarm.chamber_id == chamber_id).order_by(Alarm.raised_at)
+    if start:
+        q = q.where(Alarm.raised_at >= start)
+    if end:
+        q = q.where(Alarm.raised_at < end)
+    return list(s.scalars(q))

@@ -26,7 +26,7 @@ def main() -> None:
 
     engine = make_engine(args.db)
     init_db(engine)
-    embedder = make_embedder(args.embedder, Config.OPENAI_API_KEY, Config.EMBEDDING_MODEL)
+    embedder = make_embedder(args.embedder, vars(Config))
     chunks = chunk_directory(*DOC_DIRS)
     with make_session_factory(engine)() as s:
         n = store(s, chunks, embedder)

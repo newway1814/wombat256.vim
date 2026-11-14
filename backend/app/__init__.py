@@ -2,6 +2,7 @@
 
 from flask import Flask
 
+from .agent.llm import make_llm
 from .config import Config
 from .db import init_db, make_engine, make_session_factory
 from .errors import register_error_handlers
@@ -21,9 +22,8 @@ def create_app(config: type[Config] | None = None) -> Flask:
     init_db(engine)
     app.extensions["db_engine"] = engine
     app.extensions["db_session"] = make_session_factory(engine)
-    app.extensions["embedder"] = make_embedder(
-        app.config["EMBEDDER"], app.config["OPENAI_API_KEY"], app.config["EMBEDDING_MODEL"]
-    )
+    app.extensions["embedder"] = make_embedder(app.config["EMBEDDER"], app.config)
+    app.extensions["llm"] = make_llm(app.config["LLM_PROVIDER"], app.config)
 
     from .api import api_bp
 

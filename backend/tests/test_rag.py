@@ -78,9 +78,11 @@ def test_hashing_embedder_is_deterministic_and_normalised():
 
 
 def test_auto_embedder_without_key_is_offline():
-    assert make_embedder("auto", api_key="").name.startswith("hashing")
+    assert make_embedder("auto", {}).name.startswith("hashing")
     with pytest.raises(ValueError):
-        make_embedder("openai", api_key="")
+        make_embedder("openai", {})
+    with pytest.raises(ValueError):
+        make_embedder("gemini", {})
 
 
 # --- Search ----------------------------------------------------------------------------

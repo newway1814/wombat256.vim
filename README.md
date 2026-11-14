@@ -4,7 +4,7 @@ An AI copilot for semiconductor yield engineers. Ask "why did yield drop on thes
 agent investigates a (synthetic) fab: it checks yield, reads wafer maps, finds the common chamber,
 checks SPC charts, cites the maintenance SOPs, and drafts a work order that only a human can approve.
 
-> Status: **M4 · RAG over the manuals** — searchable SOPs and maintenance logs with chunk citations.
+> Status: **M5 · The agent** — a tool-calling loop with guards, human approval and an audit log.
 
 ## Layout
 
@@ -38,6 +38,11 @@ tools (M5) will call the same services. Errors are JSON:
 | `GET /api/wafers/<id>/map` | every die's x, y and bin, plus bin counts | |
 | `GET /api/chambers/<id>/fdc` | one sensor over time, plus PMs in the window | `param`, `from`, `to`, `limit` |
 | `GET /api/docs/search` | top manual/log sections, each with a chunk ID | `q`, `k` 1–20 |
+| `POST /api/chat` | the agent's steps as Server-Sent Events | body `{"message", "history"?}` |
+| `GET /api/tickets` | work orders, newest first | |
+| `POST /api/tickets/<id>/approve` | approve a DRAFT (409 if already decided) | body `{"by"}` |
+| `POST /api/tickets/<id>/reject` | reject a DRAFT (409 if already decided) | body `{"by"}` |
+| `GET /api/audit` | every chat, tool call and human decision, newest first | `limit` |
 
 ## Analytics
 
@@ -66,6 +71,23 @@ returning the best chunk per document with its ID, e.g. `SOP-ETCH-001#3`, for ci
   used. It finds the right document in the top 5 for 12 of 12 golden questions, but it only
   matches words, not meaning.
 
+## The agent
+
+`app/agent/` runs a tool-calling loop (at most 8 steps) over 10 tools: eight analysis tools
+that call the tested services, a read-only `run_sql` fallback, and `draft_work_order`.
+
+- **Model**: OpenAI or Gemini, whichever key is in `.env` (`LLM_PROVIDER` to force one). Both
+  sit behind one small interface, so tests use a scripted fake model and never call an API.
+- **Arguments** are validated with Pydantic; the same models produce the JSON schemas the
+  model sees. Bad arguments come back to the model as a readable error, not a crash.
+- **`run_sql`** accepts one SELECT, refuses write keywords, runs on a connection switched to
+  read-only (`PRAGMA query_only`), and returns at most 200 rows.
+- **Work orders** are drafts. Approving or rejecting is a separate endpoint only a human
+  click calls; the agent has no tool for it. Deciding twice returns 409.
+- **Audit log**: every question, tool call (arguments, ok, duration) and decision.
+
+Try it from the terminal once a key is set: `python -m scripts.ask`.
+
 ## Run it locally
 
 Needs Python 3.11+ and Node 20+.
@@ -76,7 +98,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
-cp .env.example .env               # add your OpenAI key later; .env is never committed
+cp .env.example .env               # add an OpenAI or Gemini key; .env is never committed
 pytest                             # all tests pass
 python -m scripts.generate_data    # builds fabcopilot.db (seed 42, about 2 s)
 python -m scripts.ingest_docs      # chunks + embeds the manuals (offline without a key)

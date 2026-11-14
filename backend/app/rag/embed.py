@@ -79,14 +79,41 @@ class OpenAIEmbedder:
         return _normalise(np.asarray(rows, dtype=np.float32))
 
 
-def make_embedder(kind: str, api_key: str = "", model: str = "text-embedding-3-small") -> Embedder:
-    """kind: "openai", "hashing", or "auto" (OpenAI when a key is set, else hashing)."""
+class GeminiEmbedder:
+    def __init__(self, api_key: str, model: str = "gemini-embedding-001", batch: int = 96):
+        from google import genai
+
+        self.client = genai.Client(api_key=api_key)
+        self.model = model
+        self.batch = batch
+        self.name = f"gemini-{model}"
+
+    def embed(self, texts: list[str]) -> np.ndarray:
+        rows: list[list[float]] = []
+        for i in range(0, len(texts), self.batch):
+            resp = self.client.models.embed_content(
+                model=self.model, contents=texts[i : i + self.batch]
+            )
+            rows.extend(e.values for e in resp.embeddings)
+        return _normalise(np.asarray(rows, dtype=np.float32))
+
+
+def make_embedder(kind: str, config: dict | None = None) -> Embedder:
+    """kind: "openai", "gemini", "hashing", or "auto" (whichever key is set, else hashing)."""
+    config = config or {}
+    openai_key = config.get("OPENAI_API_KEY", "")
+    gemini_key = config.get("GEMINI_API_KEY", "")
+    model = config.get("EMBEDDING_MODEL") or None
     if kind == "auto":
-        kind = "openai" if api_key else "hashing"
+        kind = "openai" if openai_key else "gemini" if gemini_key else "hashing"
     if kind == "openai":
-        if not api_key:
+        if not openai_key:
             raise ValueError("EMBEDDER=openai needs OPENAI_API_KEY")
-        return OpenAIEmbedder(api_key, model)
+        return OpenAIEmbedder(openai_key, model or "text-embedding-3-small")
+    if kind == "gemini":
+        if not gemini_key:
+            raise ValueError("EMBEDDER=gemini needs GEMINI_API_KEY")
+        return GeminiEmbedder(gemini_key, model or "gemini-embedding-001")
     if kind == "hashing":
         return HashingEmbedder()
     raise ValueError(f"unknown embedder {kind!r}")
