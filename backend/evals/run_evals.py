@@ -114,6 +114,11 @@ def run_case(case: dict, config_cls, llm, embedder, chunks, vectors) -> CaseResu
     )
 
 
+def _short(e: Exception) -> str:
+    text = str(e).splitlines()[0]
+    return f"{type(e).__name__}: {text[:160]}"
+
+
 def make_config(provider: str | None):
     class EvalConfig(Config):
         DATABASE_URL = "sqlite:///:memory:"
@@ -148,14 +153,22 @@ def main(argv: list[str] | None = None) -> dict:
 
     results = []
     for case in cases:
-        r = run_case(case, config_cls, llm, embedder, chunks, vectors)
+        try:
+            r = run_case(case, config_cls, llm, embedder, chunks, vectors)
+        except Exception as e:  # noqa: BLE001  (an API error fails one case, not the run)
+            r = CaseResult(id=case["id"], passed=False, failures=[f"error: {_short(e)}"])
         results.append(r)
         mark = "pass" if r.passed else "FAIL"
         print(f"  {mark}  {r.id:<16} {r.seconds:>5}s  {'; '.join(r.failures)}")
 
     passed = sum(r.passed for r in results)
+    errored = sum(any(f.startswith("error:") for f in r.failures) for r in results)
     rate = passed / len(results) if results else 0.0
     print(f"\npass rate: {passed}/{len(results)} ({rate:.0%})")
+    if errored:
+        print(
+            f"{errored} case(s) hit an API error rather than a wrong answer; rerun them with --only"
+        )
     if getattr(llm, "served_by", None):
         print(f"answered by: {', '.join(sorted(llm.served_by))}")
     summary = {
@@ -166,6 +179,7 @@ def main(argv: list[str] | None = None) -> dict:
         "passed": passed,
         "total": len(results),
         "pass_rate": round(rate, 3),
+        "errored": errored,
         "cases": [asdict(r) for r in results],
     }
     if not args.no_save:

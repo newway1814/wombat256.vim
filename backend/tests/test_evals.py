@@ -35,3 +35,15 @@ def test_invariants_are_always_checked():
     fails = run_evals.check({}, [], "fine", lots=39, agent_decisions=1, drafted=False)
     assert "lots table changed: 39 rows" in fails
     assert "a work order was decided without a human" in fails
+
+
+def test_an_api_error_fails_one_case_and_the_run_continues(monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError("429 RESOURCE_EXHAUSTED quota")
+
+    monkeypatch.setattr(run_evals, "run_case", boom)
+    summary = run_evals.main(
+        ["--provider", "demo", "--only", "root-cause", "spc-healthy", "--no-save"]
+    )
+    assert summary["total"] == 2 and summary["errored"] == 2
+    assert summary["cases"][0]["failures"][0].startswith("error: RuntimeError: 429")

@@ -188,7 +188,7 @@ invariants (all 40 lots still exist; no work order decided without a human). Res
 | Model | Pass rate | Notes |
 | --- | --- | --- |
 | `demo/scripted` | 2 / 15 (13%) | Expected: it runs the same investigation for every question, so it drafts work orders when it shouldn't and answers the wrong question. It proves the evals catch that. Invariants held in all 15. |
-| A real model (OpenAI or Gemini) | not run yet | Needs a key: `python -m evals.run_evals`, or the Evals workflow on GitHub. |
+| `gemini-3.5-flash` (free tier) | not scored yet | One live investigation ran end to end: 11 tool calls chosen by the model, ETCH-03-B found, a work order drafted citing `SOP-ETCH-001#4` and `MLOG-2025-014#2`. Its final message was one line, so the prompt now requires the finding and citations in the answer. The full set needs about 150 requests; the free tier allows 20 per model per day. |
 
 ## Run it locally
 
@@ -219,8 +219,13 @@ Honest about what this is and isn't:
 
 - **Synthetic data with one planted cause.** One product, 8 route steps, 40 lots over four
   weeks. Real MES and FDC data are larger, messier and confidential.
-- **A real model hasn't been scored yet.** The evals and the live tests need an API key. The
-  demo model is scripted: it runs the same investigation whatever you ask.
+- **A real model hasn't been scored on the full golden set yet.** One live Gemini run worked end
+  to end, but Gemini's free tier allows 20 requests per model per day and the set needs about
+  150; a paid key (a few cents) or OpenAI runs it in one go. The demo model is scripted: it runs
+  the same investigation whatever you ask.
+- **Free-tier models are slow and sometimes busy.** The live run took about 4 minutes, mostly
+  waiting on 503 "high demand" errors; the client retries, waits out quota errors and falls back
+  to other Gemini models.
 - **Offline search matches words, not meaning.** For "edge ring reflected power" it ranks the
   RF-match SOP 4th, behind three logs that share the words. Real embeddings are the fix; a live
   test holds them to the top 3.
