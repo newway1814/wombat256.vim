@@ -4,6 +4,7 @@ from flask import Flask
 
 from .config import Config
 from .db import init_db, make_engine, make_session_factory
+from .errors import register_error_handlers
 
 
 def create_app(config: type[Config] | None = None) -> Flask:
@@ -23,4 +24,5 @@ def create_app(config: type[Config] | None = None) -> Flask:
     from .api import api_bp
 
     app.register_blueprint(api_bp, url_prefix="/api")
+    register_error_handlers(app)
     return app

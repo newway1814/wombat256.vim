@@ -4,7 +4,7 @@ An AI copilot for semiconductor yield engineers. Ask "why did yield drop on thes
 agent investigates a (synthetic) fab: it checks yield, reads wafer maps, finds the common chamber,
 checks SPC charts, cites the maintenance SOPs, and drafts a work order that only a human can approve.
 
-> Status: **M1 · The fake fab** — seeded synthetic fab data with one planted root cause.
+> Status: **M2 · REST API** — read endpoints over the fake fab.
 
 ## Layout
 
@@ -23,6 +23,20 @@ result for every die. The same seed always gives identical data.
 One problem is planted for the agent to find: after a PM on chamber **ETCH-03-B** on
 2026-10-26, reflected RF power drifts up and the wafers it etches at gate etch get edge-ring
 failures (mean yield about 82% against about 95% elsewhere).
+
+## API
+
+Routes stay thin; logic lives in `app/services/`, storage in `app/repository.py`. The agent's
+tools (M5) will call the same services. Errors are JSON:
+`{"error": {"code": "not_found", "message": "Lot NOPE not found"}}`.
+
+| Endpoint | Returns | Query |
+| --- | --- | --- |
+| `GET /api/health` | `{"status": "ok"}` | |
+| `GET /api/lots` | lots, newest first, with mean yield | `limit` 1–200, `offset`, `status` |
+| `GET /api/lots/<id>` | wafers and which chambers ran them at each step | |
+| `GET /api/wafers/<id>/map` | every die's x, y and bin, plus bin counts | |
+| `GET /api/chambers/<id>/fdc` | one sensor over time, plus PMs in the window | `param`, `from`, `to`, `limit` |
 
 ## Run it locally
 
