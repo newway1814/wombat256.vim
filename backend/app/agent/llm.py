@@ -164,7 +164,8 @@ class GeminiChat:
 
 
 def make_llm(provider: str, config: dict) -> LLM | None:
-    """provider: "openai", "gemini", or "auto" (whichever key is set; OpenAI first)."""
+    """provider: "openai", "gemini", "demo" (no key, scripted), or "auto" (whichever key is
+    set; OpenAI first)."""
     if provider == "auto":
         if config.get("OPENAI_API_KEY"):
             provider = "openai"
@@ -176,6 +177,10 @@ def make_llm(provider: str, config: dict) -> LLM | None:
         return OpenAIChat(config["OPENAI_API_KEY"], config["OPENAI_CHAT_MODEL"])
     if provider == "gemini":
         return GeminiChat(config["GEMINI_API_KEY"], config["GEMINI_CHAT_MODEL"])
+    if provider == "demo":
+        from .demo import DemoLLM
+
+        return DemoLLM(float(config.get("DEMO_STEP_DELAY", 0.6)))
     if provider == "none":
         return None
     raise ValueError(f"unknown LLM provider {provider!r}")

@@ -100,6 +100,11 @@ class Context:
 
 def _spc(ctx: Context, a: SpcChart) -> dict:
     chart = analytics.spc_chart(ctx.session, a.chamber_id, a.param)
+    flagged = {v["index"] for v in chart["violations"]}
+    chart["points_out_of_control"] = len(flagged)
+    chart["points_out_of_control_after_baseline"] = sum(
+        not chart["points"][i]["baseline"] for i in flagged
+    )
     chart["violations"] = chart["violations"][:10]
     return chart
 

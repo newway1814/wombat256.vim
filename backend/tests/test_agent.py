@@ -312,3 +312,35 @@ def test_chat_empty_message_is_400(agent_app):
     finally:
         agent_app.extensions["llm"] = None
     assert r.status_code == 400
+
+
+# --- Demo model and status -------------------------------------------------------------
+
+
+def test_demo_model_runs_the_reference_investigation(ctx):
+    from app.agent.demo import DemoLLM
+
+    events = list(loop.run(DemoLLM(step_delay=0), ctx, "Why did yield drop?"))
+    calls = [e["name"] for e in events if e["type"] == "tool_call"]
+    assert calls == [
+        "check_lot_yields",
+        "find_commonality",
+        "get_lot",
+        "classify_wafer_map",
+        "spc_chart",
+        "compare_around_pm",
+        "get_chamber_events",
+        "search_docs",
+        "draft_work_order",
+    ]
+    assert all(e["ok"] for e in events if e["type"] == "tool_result")
+    answer = events[-1]
+    assert answer["type"] == "message"
+    assert answer["content"].startswith(f"{CULPRIT} is the common cause.")
+    assert "edge ring" in answer["content"] and "[SOP-ETCH-001#" in answer["content"]
+
+
+def test_status(agent_app):
+    body = agent_app.test_client().get("/api/status").get_json()
+    assert body["lots"] == 40 and body["flagged_lots"] == 4
+    assert body["model"] is None and body["embedder"].startswith("hashing")

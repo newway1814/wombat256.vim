@@ -17,6 +17,7 @@ class Config:
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto")
     OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini")
     GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
+    DEMO_STEP_DELAY = float(os.getenv("DEMO_STEP_DELAY", "0.6"))
     EMBEDDER = os.getenv("EMBEDDER", "auto")
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "")
 

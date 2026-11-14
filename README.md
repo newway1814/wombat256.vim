@@ -4,7 +4,7 @@ An AI copilot for semiconductor yield engineers. Ask "why did yield drop on thes
 agent investigates a (synthetic) fab: it checks yield, reads wafer maps, finds the common chamber,
 checks SPC charts, cites the maintenance SOPs, and drafts a work order that only a human can approve.
 
-> Status: **M5 · The agent** — a tool-calling loop with guards, human approval and an audit log.
+> Status: **M6 · The screen** — ask a question, watch the workspace fill live, approve the work order.
 
 ## Layout
 
@@ -88,6 +88,25 @@ that call the tested services, a read-only `run_sql` fallback, and `draft_work_o
 
 Try it from the terminal once a key is set: `python -m scripts.ask`.
 
+**Demo mode** (`LLM_PROVIDER=demo`, no key needed) swaps the model for a scripted stand-in that
+runs the real tools on the real data in the reference order and writes its answer only from
+their results. It always runs that same investigation, whatever you ask; use it to demo the
+screen, and a real key to ask anything else.
+
+## The screen
+
+`frontend/` is React + TypeScript (Vite), styled by hand from design tokens in
+`src/styles/tokens.css` (light and dark), with IBM Plex Sans and Mono bundled locally.
+
+- **Investigate**: a single question box. Press Enter and the conversation moves left while a
+  workspace opens on the right. Every tool result appears there as it arrives over Server-Sent
+  Events: flagged lots, commonality, the lot, the wafer map, the SPC chart, the before/after
+  PM test, chamber events, sources, and the draft work order with Approve and Reject. The trace
+  on the left shows each call running, then done; click a line for its raw result. Clicking a
+  lot or wafer opens it in the workspace.
+- **Lots**, **Work orders**, **Audit log**: plain pages over the same API.
+- Charts are hand-drawn SVG (no chart library), so they follow the design exactly.
+
 ## Run it locally
 
 Needs Python 3.11+ and Node 20+.
@@ -102,10 +121,10 @@ cp .env.example .env               # add an OpenAI or Gemini key; .env is never 
 pytest                             # all tests pass
 python -m scripts.generate_data    # builds fabcopilot.db (seed 42, about 2 s)
 python -m scripts.ingest_docs      # chunks + embeds the manuals (offline without a key)
-python wsgi.py                     # http://localhost:5000/api/health
+python wsgi.py                     # API on :5000 (LLM_PROVIDER=demo python wsgi.py: no key)
 
 # Frontend (terminal 2)
 cd frontend
 npm install
-npm run dev                        # http://localhost:5173 shows "Backend: ok"
+npm run dev                        # http://localhost:5173
 ```
