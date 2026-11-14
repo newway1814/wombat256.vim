@@ -32,26 +32,43 @@ def check_sql(sql: str) -> str:
 def run_readonly(s: Session, sql: str, max_rows: int = MAX_ROWS) -> dict:
     """Run a checked query on a read-only connection and return at most max_rows rows."""
     query = check_sql(sql)
-    conn = s.connection()
-    dialect = conn.dialect.name
-    try:
-        if dialect == "sqlite":
-            conn.exec_driver_sql("PRAGMA query_only = ON")
-        elif dialect == "postgresql":
-            conn.exec_driver_sql("SET TRANSACTION READ ONLY")
-        result = conn.execute(text(query))
-        columns = list(result.keys())
-        rows = result.fetchmany(max_rows + 1)
-    except BadRequest:
-        raise
-    except Exception as e:  # noqa: BLE001  (SQL errors go back to the model as text)
-        raise BadRequest(f"Query failed: {str(e).splitlines()[0][:300]}") from None
-    finally:
-        if dialect == "sqlite":
-            conn.exec_driver_sql("PRAGMA query_only = OFF")
-        s.rollback()
+    if s.get_bind().dialect.name == "postgresql":
+        columns, rows = _postgres_readonly(s, query, max_rows)
+    else:
+        columns, rows = _sqlite_readonly(s, query, max_rows)
     return {
         "columns": columns,
         "rows": [list(r) for r in rows[:max_rows]],
         "truncated": len(rows) > max_rows,
     }
+
+
+def _fail(e: Exception) -> BadRequest:
+    return BadRequest(f"Query failed: {str(e).splitlines()[0][:300]}")
+
+
+def _sqlite_readonly(s: Session, query: str, max_rows: int):
+    conn = s.connection()
+    try:
+        conn.exec_driver_sql("PRAGMA query_only = ON")
+        result = conn.execute(text(query))
+        return list(result.keys()), result.fetchmany(max_rows + 1)
+    except Exception as e:  # noqa: BLE001  (SQL errors go back to the model as text)
+        raise _fail(e) from None
+    finally:
+        conn.exec_driver_sql("PRAGMA query_only = OFF")
+        s.rollback()
+
+
+def _postgres_readonly(s: Session, query: str, max_rows: int):
+    # A fresh connection, so READ ONLY is the first statement of its own transaction.
+    with s.get_bind().connect() as conn:
+        try:
+            conn.exec_driver_sql("SET TRANSACTION READ ONLY")
+            conn.exec_driver_sql("SET LOCAL statement_timeout = 5000")
+            result = conn.execute(text(query))
+            return list(result.keys()), result.fetchmany(max_rows + 1)
+        except Exception as e:  # noqa: BLE001
+            raise _fail(e) from None
+        finally:
+            conn.rollback()

@@ -1,0 +1,46 @@
+# docker compose up --build   ->  http://localhost:8080
+#
+# Without a key the agent runs in demo mode. To use a real model, put OPENAI_API_KEY or
+# GEMINI_API_KEY in a .env file next to this one and set LLM_PROVIDER=auto there.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fab
+      POSTGRES_PASSWORD: fab
+      POSTGRES_DB: fabcopilot
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fab -d fabcopilot"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://fab:fab@db:5432/fabcopilot
+      LLM_PROVIDER: ${LLM_PROVIDER:-demo}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      EMBEDDER: ${EMBEDDER:-auto}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

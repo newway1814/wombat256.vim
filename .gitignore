@@ -20,3 +20,6 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Eval runs (results are summarised in the README)
+backend/evals/results/

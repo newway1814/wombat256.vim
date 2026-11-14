@@ -1,10 +1,12 @@
 # FabCopilot
 
+[![CI](https://github.com/newway1814/wombat256.vim/actions/workflows/ci.yml/badge.svg?branch=claude/github-repo-setup-tiskb2)](https://github.com/newway1814/wombat256.vim/actions/workflows/ci.yml)
+
 An AI copilot for semiconductor yield engineers. Ask "why did yield drop on these lots?" and an
 agent investigates a (synthetic) fab: it checks yield, reads wafer maps, finds the common chamber,
 checks SPC charts, cites the maintenance SOPs, and drafts a work order that only a human can approve.
 
-> Status: **M6 · The screen** — ask a question, watch the workspace fill live, approve the work order.
+> Status: **M7 · Tests, evals, CI, Docker** — `docker compose up` runs the whole app; CI tests every push.
 
 ## Layout
 
@@ -107,6 +109,37 @@ screen, and a real key to ask anything else.
 - **Lots**, **Work orders**, **Audit log**: plain pages over the same API.
 - Charts are hand-drawn SVG (no chart library), so they follow the design exactly.
 
+## Run it with Docker
+
+```bash
+docker compose up --build      # http://localhost:8080
+```
+
+Postgres, the API (gunicorn) and the screen (nginx). On first start the API generates the fake
+fab and indexes the manuals. Without a key it runs in demo mode; for a real model put
+`OPENAI_API_KEY` or `GEMINI_API_KEY` and `LLM_PROVIDER=auto` in a `.env` next to
+`docker-compose.yml`.
+
+## Tests and evals
+
+| What | Where | Runs |
+| --- | --- | --- |
+| Backend unit and API tests (93), offline with a fake model | `backend/tests` | every push |
+| Same findings, SQL guard and tickets on real PostgreSQL | `tests/test_postgres.py` | every push (CI Postgres service) |
+| Frontend unit tests: stream parser, formatting | `frontend/src/*.test.ts` | every push |
+| End to end in Chromium: ask, watch it stream, open a lot, approve, audit | `frontend/e2e` | every push |
+| Whole stack from a clean machine: `docker compose up`, smoke test through nginx | CI `docker` job | every push |
+| 15 golden questions against a real model | `backend/evals` | on demand (costs API credits) |
+
+**Evals.** `python -m evals.run_evals` runs each golden question on a fresh fake fab and checks
+the tools called, the answer's facts and citations, whether it drafted a work order, and two
+invariants (all 40 lots still exist; no work order decided without a human). Results so far:
+
+| Model | Pass rate | Notes |
+| --- | --- | --- |
+| `demo/scripted` | 2 / 15 (13%) | Expected: it runs the same investigation for every question, so it drafts work orders when it shouldn't and answers the wrong question. It proves the evals catch that. Invariants held in all 15. |
+| A real model (OpenAI or Gemini) | not run yet | Needs a key: `python -m evals.run_evals`, or the Evals workflow on GitHub. |
+
 ## Run it locally
 
 Needs Python 3.11+ and Node 20+.
@@ -118,7 +151,7 @@ python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env               # add an OpenAI or Gemini key; .env is never committed
-pytest                             # all tests pass
+pytest                             # all tests pass (Postgres tests skip without TEST_POSTGRES_URL)
 python -m scripts.generate_data    # builds fabcopilot.db (seed 42, about 2 s)
 python -m scripts.ingest_docs      # chunks + embeds the manuals (offline without a key)
 python wsgi.py                     # API on :5000 (LLM_PROVIDER=demo python wsgi.py: no key)
@@ -127,4 +160,5 @@ python wsgi.py                     # API on :5000 (LLM_PROVIDER=demo python wsgi
 cd frontend
 npm install
 npm run dev                        # http://localhost:5173
+npm test && npm run e2e            # unit tests; end-to-end (PYTHON=../backend/.venv/bin/python)
 ```
