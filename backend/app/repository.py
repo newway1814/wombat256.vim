@@ -119,3 +119,43 @@ def maintenance_of_chamber(
     if end:
         q = q.where(MaintenanceEvent.performed_at < end)
     return list(s.scalars(q))
+
+
+def lot_yields(s: Session) -> list[tuple[str, float]]:
+    q = (
+        select(Wafer.lot_id, func.avg(Wafer.yield_pct))
+        .group_by(Wafer.lot_id)
+        .order_by(Wafer.lot_id)
+    )
+    return [(lot_id, float(y)) for lot_id, y in s.execute(q)]
+
+
+def wafer_yields(s: Session) -> list[tuple[str, float]]:
+    q = select(Wafer.id, Wafer.yield_pct).order_by(Wafer.id)
+    return [(wafer_id, float(y)) for wafer_id, y in s.execute(q)]
+
+
+def step_history(s: Session, step: str | None = None) -> list[tuple[str, str, str]]:
+    """(wafer_id, step name, chamber_id) for every wafer at every step (or one step)."""
+    q = select(WaferStep.wafer_id, RouteStep.name, WaferStep.chamber_id).join(
+        RouteStep, RouteStep.id == WaferStep.step_id
+    )
+    if step:
+        q = q.where(RouteStep.name == step)
+    return [tuple(r) for r in s.execute(q)]
+
+
+def step_exists(s: Session, step: str) -> bool:
+    return s.execute(select(RouteStep.id).where(RouteStep.name == step)).first() is not None
+
+
+def fdc_by_lot(s: Session, chamber_id: str, column):
+    """(lot_id, run_at, value) for every run in a chamber, oldest first."""
+    q = (
+        select(Wafer.lot_id, FdcSummary.run_at, column.label("value"))
+        .join(WaferStep, WaferStep.id == FdcSummary.wafer_step_id)
+        .join(Wafer, Wafer.id == WaferStep.wafer_id)
+        .where(FdcSummary.chamber_id == chamber_id)
+        .order_by(FdcSummary.run_at)
+    )
+    return s.execute(q).all()

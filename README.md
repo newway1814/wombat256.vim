@@ -4,7 +4,7 @@ An AI copilot for semiconductor yield engineers. Ask "why did yield drop on thes
 agent investigates a (synthetic) fab: it checks yield, reads wafer maps, finds the common chamber,
 checks SPC charts, cites the maintenance SOPs, and drafts a work order that only a human can approve.
 
-> Status: **M2 · REST API** — read endpoints over the fake fab.
+> Status: **M3 · Analytics tools** — yield check, wafer-map patterns, commonality, SPC.
 
 ## Layout
 
@@ -37,6 +37,21 @@ tools (M5) will call the same services. Errors are JSON:
 | `GET /api/lots/<id>` | wafers and which chambers ran them at each step | |
 | `GET /api/wafers/<id>/map` | every die's x, y and bin, plus bin counts | |
 | `GET /api/chambers/<id>/fdc` | one sensor over time, plus PMs in the window | `param`, `from`, `to`, `limit` |
+
+## Analytics
+
+Plain, unit-tested Python in `app/analytics/`; the LLM never calculates, it calls these through
+`app/services/analytics.py`.
+
+| Module | Answers | Method |
+| --- | --- | --- |
+| `yield_check.py` | Which lots are unusually low? | Robust baseline (median, MAD sigma); flag below baseline - 3 sigma |
+| `wafer_map.py` | What pattern is on this wafer? | Edge-band vs inner fail rate; largest touching group of failed dies |
+| `commonality.py` | Which chamber do bad wafers share? | Fisher's exact test per (step, chamber), Bonferroni-adjusted |
+| `spc.py` | Is this chamber out of control? | X-bar chart per lot visit, Western Electric rules 1-4; Welch t-test around a PM |
+
+On the fake fab: commonality ranks ETCH-03-B at gate etch first (adjusted p about 1e-37), every
+edge-ring wafer comes from it after its PM, and its SPC chart fires only after the PM.
 
 ## Run it locally
 
