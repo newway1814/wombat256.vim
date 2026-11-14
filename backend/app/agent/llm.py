@@ -96,13 +96,69 @@ class OpenAIChat:
         return Reply(text=msg.content, tool_calls=calls)
 
 
-class GeminiChat:
-    def __init__(self, api_key: str, model: str):
-        from google import genai
+def gemini_client(api_key: str):
+    """Gemini client with a timeout and retries: busy models return 503 and recover quickly."""
+    from google import genai
+    from google.genai import types
 
-        self.client = genai.Client(api_key=api_key)
+    return genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(
+            timeout=60_000,
+            retry_options=types.HttpRetryOptions(
+                attempts=5,
+                initial_delay=2.0,
+                max_delay=20.0,
+                http_status_codes=[429, 500, 503, 504],
+            ),
+        ),
+    )
+
+
+def call_with_quota_wait(fn, attempts: int = 4):
+    """Run a Gemini call; on a 429 quota error wait as long as the API says, then retry."""
+    import re
+    import time
+
+    from google.genai import errors
+
+    for attempt in range(attempts):
+        try:
+            return fn()
+        except errors.ClientError as e:
+            if e.code != 429 or attempt == attempts - 1:
+                raise
+            m = re.search(r"retry in ([\d.]+)s", str(e))
+            time.sleep(min(float(m.group(1)) + 1 if m else 30.0, 70.0))
+    raise RuntimeError("unreachable")
+
+
+class GeminiChat:
+    def __init__(self, api_key: str, model: str, fallbacks: list[str] | None = None):
+        self.client = gemini_client(api_key)
         self.model = model
+        self.models = [model, *(fallbacks or [])]
         self.name = f"gemini/{model}"
+        self.served_by: set[str] = set()  # which models actually answered
+
+    def _generate(self, contents, config):
+        """Try the main model, then each fallback, when a model stays overloaded (5xx)."""
+        from google.genai import errors
+
+        last: Exception | None = None
+        for model in self.models:
+            try:
+                resp = call_with_quota_wait(
+                    lambda m=model: self.client.models.generate_content(
+                        model=m, contents=contents, config=config
+                    )
+                )
+                self.served_by.add(model)
+                return resp
+            except errors.ServerError as e:
+                last = e
+        assert last is not None
+        raise last
 
     def complete(self, system: str, messages: list[dict], tools: list[ToolSpec]) -> Reply:
         from google.genai import types
@@ -149,9 +205,7 @@ class GeminiChat:
             ],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
-        resp = self.client.models.generate_content(
-            model=self.model, contents=contents, config=config
-        )
+        resp = self._generate(contents, config)
         content = resp.candidates[0].content if resp.candidates else None
         calls, texts = [], []
         for i, part in enumerate((content.parts if content else None) or []):
@@ -176,7 +230,8 @@ def make_llm(provider: str, config: dict) -> LLM | None:
     if provider == "openai":
         return OpenAIChat(config["OPENAI_API_KEY"], config["OPENAI_CHAT_MODEL"])
     if provider == "gemini":
-        return GeminiChat(config["GEMINI_API_KEY"], config["GEMINI_CHAT_MODEL"])
+        fallbacks = [m for m in config.get("GEMINI_FALLBACK_MODELS", "").split(",") if m.strip()]
+        return GeminiChat(config["GEMINI_API_KEY"], config["GEMINI_CHAT_MODEL"], fallbacks)
     if provider == "demo":
         from .demo import DemoLLM
 

@@ -88,14 +88,13 @@ def check(
     return fails
 
 
-def run_case(case: dict, config_cls) -> CaseResult:
+def run_case(case: dict, config_cls, llm, embedder, chunks, vectors) -> CaseResult:
     app = create_app(config_cls)
     generate(app.extensions["db_engine"], seed=42)
-    llm = app.extensions["llm"]
     started = time.perf_counter()
     with app.extensions["db_session"]() as s:
-        store(s, chunk_directory(*DOC_DIRS), app.extensions["embedder"])
-        events = list(loop.run(llm, Context(s, app.extensions["embedder"]), case["question"]))
+        store(s, chunks, embedder, vectors)
+        events = list(loop.run(llm, Context(s, embedder), case["question"]))
         answer = next((e["content"] for e in reversed(events) if e["type"] == "message"), "")
         lots = s.execute(select(func.count()).select_from(Lot)).scalar_one()
         drafted = s.execute(select(func.count()).select_from(WorkOrder)).scalar_one() > 0
@@ -140,11 +139,16 @@ def main(argv: list[str] | None = None) -> dict:
     llm = probe.extensions["llm"]
     if llm is None:
         raise SystemExit("No model: set OPENAI_API_KEY or GEMINI_API_KEY, or use --provider demo")
-    print(f"model {llm.name} · embedder {probe.extensions['embedder'].name} · {len(cases)} cases\n")
+    embedder = probe.extensions["embedder"]
+    print(f"model {llm.name} · embedder {embedder.name} · {len(cases)} cases\n")
+
+    # Embed the manuals once and reuse the vectors in every case (API quotas, cost).
+    chunks = chunk_directory(*DOC_DIRS)
+    vectors = embedder.embed([c.for_embedding() for c in chunks])
 
     results = []
     for case in cases:
-        r = run_case(case, config_cls)
+        r = run_case(case, config_cls, llm, embedder, chunks, vectors)
         results.append(r)
         mark = "pass" if r.passed else "FAIL"
         print(f"  {mark}  {r.id:<16} {r.seconds:>5}s  {'; '.join(r.failures)}")
@@ -152,8 +156,11 @@ def main(argv: list[str] | None = None) -> dict:
     passed = sum(r.passed for r in results)
     rate = passed / len(results) if results else 0.0
     print(f"\npass rate: {passed}/{len(results)} ({rate:.0%})")
+    if getattr(llm, "served_by", None):
+        print(f"answered by: {', '.join(sorted(llm.served_by))}")
     summary = {
         "model": llm.name,
+        "served_by": sorted(getattr(llm, "served_by", [])),
         "embedder": probe.extensions["embedder"].name,
         "run_at": datetime.now().isoformat(timespec="seconds"),
         "passed": passed,

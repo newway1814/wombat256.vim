@@ -80,19 +80,25 @@ class OpenAIEmbedder:
 
 
 class GeminiEmbedder:
-    def __init__(self, api_key: str, model: str = "gemini-embedding-001", batch: int = 96):
-        from google import genai
+    """Gemini embeddings, paced for the free tier (100 embed requests per minute)."""
 
-        self.client = genai.Client(api_key=api_key)
+    def __init__(self, api_key: str, model: str = "gemini-embedding-001", batch: int = 50):
+        from ..agent.llm import gemini_client
+
+        self.client = gemini_client(api_key)
         self.model = model
         self.batch = batch
-        self.name = f"gemini-{model}"
+        self.name = model if model.startswith("gemini") else f"gemini-{model}"
 
     def embed(self, texts: list[str]) -> np.ndarray:
+        from ..agent.llm import call_with_quota_wait
+
         rows: list[list[float]] = []
         for i in range(0, len(texts), self.batch):
-            resp = self.client.models.embed_content(
-                model=self.model, contents=texts[i : i + self.batch]
+            resp = call_with_quota_wait(
+                lambda chunk=texts[i : i + self.batch]: self.client.models.embed_content(
+                    model=self.model, contents=chunk
+                )
             )
             rows.extend(e.values for e in resp.embeddings)
         return _normalise(np.asarray(rows, dtype=np.float32))

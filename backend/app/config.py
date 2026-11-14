@@ -16,7 +16,11 @@ class Config:
     # uses the offline hashing embedder.
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto")
     OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini")
-    GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
+    GEMINI_CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-3.5-flash")
+    # Tried in order when the main model stays overloaded.
+    GEMINI_FALLBACK_MODELS = os.getenv(
+        "GEMINI_FALLBACK_MODELS", "gemini-flash-latest,gemini-3.1-flash-lite"
+    )
     DEMO_STEP_DELAY = float(os.getenv("DEMO_STEP_DELAY", "0.6"))
     EMBEDDER = os.getenv("EMBEDDER", "auto")
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "")

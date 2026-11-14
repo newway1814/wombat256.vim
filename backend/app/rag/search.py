@@ -13,9 +13,12 @@ from .chunk import Chunk
 from .embed import Embedder
 
 
-def store(s: Session, chunks: list[Chunk], embedder: Embedder) -> int:
-    """Replace all chunks for this embedder with freshly embedded ones."""
-    vectors = embedder.embed([c.for_embedding() for c in chunks])
+def store(
+    s: Session, chunks: list[Chunk], embedder: Embedder, vectors: np.ndarray | None = None
+) -> int:
+    """Replace all chunks for this embedder. Pass vectors to reuse ones embedded earlier."""
+    if vectors is None:
+        vectors = embedder.embed([c.for_embedding() for c in chunks])
     s.execute(delete(DocChunk).where(DocChunk.embedder == embedder.name))
     if chunks:
         s.execute(
