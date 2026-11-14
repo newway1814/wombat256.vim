@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import type { WaferMap as WaferMapData } from '../../api/types'
-import { pct } from '../../format'
 import { binColor } from '../../domain'
+import { pct } from '../../format'
 import { WaferMap } from '../WaferMap'
 import { Panel } from './Panel'
 
@@ -10,15 +10,9 @@ interface Classification {
   label: string
   edge_fail_rate: number
   inner_fail_rate: number
-  largest_cluster: number
 }
 
-const PATTERN: Record<string, string> = {
-  edge_ring: 'Edge ring',
-  cluster: 'Cluster',
-  random: 'Random',
-  clean: 'Clean',
-}
+const PATTERN: Record<string, string> = { edge_ring: 'Edge ring', cluster: 'Cluster', random: 'Random', clean: 'Clean' }
 
 export function WaferMapCard({ waferId, classification }: { waferId: string; classification?: Classification }) {
   const [map, setMap] = useState<WaferMapData | null>(null)
@@ -35,66 +29,45 @@ export function WaferMapCard({ waferId, classification }: { waferId: string; cla
     }
   }, [waferId])
 
-  const abnormal = classification && classification.label !== 'clean' && classification.label !== 'random'
+  const abnormal = classification && (classification.label === 'edge_ring' || classification.label === 'cluster')
+  const fails = map ? Object.entries(map.bin_counts).filter(([b]) => b !== '1').sort((a, b) => b[1] - a[1]) : []
   return (
     <Panel
       wide
       label={`Wafer map ${waferId}`}
-      title={
-        <>
-          Wafer map <span className="mono">{waferId}</span>
-        </>
-      }
-      meta={map ? `${classification ? 'classify_wafer_map · ' : ''}${map.yield_pct.toFixed(2)}% yield` : undefined}
+      title={<span className="mono">{waferId}</span>}
+      meta={map ? `${map.yield_pct.toFixed(1)}% yield` : undefined}
     >
       <div className="panel-body">
         {error && <p className="alarm">{error}</p>}
-        {!map && !error && <p className="muted">Loading wafer map…</p>}
+        {!map && !error && <p className="muted">Loading…</p>}
         {map && (
           <div className="wafer-wrap">
             <WaferMap
               data={map}
               label={`Wafer map of ${waferId}${classification ? `: ${PATTERN[classification.label]?.toLowerCase()}` : ''}`}
             />
-            <div style={{ flex: '1 1 220px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <table className="data" style={{ maxWidth: 320 }}>
-                <thead>
-                  <tr>
-                    <th>Bin</th>
-                    <th className="num">Dies</th>
-                    <th className="num">%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(map.bin_counts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([bin, n]) => (
-                      <tr key={bin}>
-                        <td>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                            <span className="swatch" style={{ background: binColor(Number(bin)) }} />
-                            <span className="mono">{bin}</span>
-                            <span className="muted">{bin === '1' ? 'pass' : ''}</span>
-                          </span>
-                        </td>
-                        <td className="num">{n}</td>
-                        <td className="num">{((100 * n) / map.die_total).toFixed(1)}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+            <div className="wafer-facts">
               {classification && (
-                <dl className="kv" style={{ maxWidth: 320 }}>
-                  <dt>Pattern</dt>
-                  <dd className={abnormal ? 'warn' : undefined}>{PATTERN[classification.label] ?? classification.label}</dd>
-                  <dt>Edge fails</dt>
-                  <dd className="mono">{pct(100 * classification.edge_fail_rate)}</dd>
-                  <dt>Inner fails</dt>
-                  <dd className="mono">{pct(100 * classification.inner_fail_rate)}</dd>
-                  <dt>Largest cluster</dt>
-                  <dd className="mono">{classification.largest_cluster} dies</dd>
-                </dl>
+                <div className="headline">
+                  <span className={`big${abnormal ? ' warn' : ''}`}>{PATTERN[classification.label] ?? classification.label}</span>
+                  <span className="muted">
+                    {pct(100 * classification.edge_fail_rate, 0)} of edge dies fail, {pct(100 * classification.inner_fail_rate, 0)} inside
+                  </span>
+                </div>
               )}
+              <ul className="legend">
+                <li>
+                  <span className="swatch" style={{ background: binColor(1) }} />
+                  Pass <span className="mono muted">{map.bin_counts['1'] ?? 0}</span>
+                </li>
+                {fails.map(([bin, n]) => (
+                  <li key={bin}>
+                    <span className="swatch" style={{ background: binColor(Number(bin)) }} />
+                    Bin {bin} <span className="mono muted">{n}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}

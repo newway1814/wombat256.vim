@@ -8,6 +8,7 @@ import type {
   Ticket,
   WaferMap,
 } from './types'
+import { demoApi, demoStreamChat } from './demo'
 
 export class ApiError extends Error {
   readonly status: number
@@ -38,7 +39,10 @@ async function toError(res: Response): Promise<ApiError> {
   }
 }
 
-export const api = {
+/** True in the static demo build (npm run build:demo), which replays a recording. */
+export const STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === '1'
+
+const liveApi = {
   status: () => request<Status>('/status'),
   lots: (limit = 50) => request<{ items: LotSummary[]; total: number }>(`/lots?limit=${limit}`),
   lot: (id: string) => request<LotDetail>(`/lots/${encodeURIComponent(id)}`),
@@ -49,6 +53,8 @@ export const api = {
     request<Ticket>(`/tickets/${id}/${decision}`, { method: 'POST', body: JSON.stringify({ by }) }),
 }
 
+export const api: typeof liveApi = STATIC_DEMO ? demoApi : liveApi
+
 /** POST /api/chat and call onEvent for every Server-Sent Event as it arrives. */
 export async function streamChat(
   message: string,
@@ -56,6 +62,7 @@ export async function streamChat(
   onEvent: (e: AgentEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
+  if (STATIC_DEMO) return demoStreamChat(message, onEvent, signal)
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },

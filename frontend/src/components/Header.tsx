@@ -8,18 +8,22 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'audit', label: 'Audit log' },
 ]
 
+const THEME_LABEL = { system: 'Auto', light: 'Light', dark: 'Dark' } as const
+
 export function Header({
   view,
   onView,
   status,
   theme,
   onTheme,
+  demo,
 }: {
   view: View
   onView: (v: View) => void
   status: Status | null
   theme: 'system' | 'light' | 'dark'
   onTheme: () => void
+  demo?: boolean
 }) {
   return (
     <header className="topbar">
@@ -29,6 +33,7 @@ export function Header({
           <path d="M3 9.5h8" stroke="currentColor" strokeWidth="1.5" />
         </svg>
         FabCopilot
+        {demo && <span className="tag">Demo</span>}
       </div>
       <nav className="nav" aria-label="Main">
         {VIEWS.map((v) => (
@@ -41,29 +46,17 @@ export function Header({
       {status && (
         <dl className="status">
           <div>
-            <dt className="label">Lots</dt>
-            <dd>{status.lots}</dd>
-          </div>
-          <div>
-            <dt className="label">Baseline yield</dt>
-            <dd>{status.baseline_yield != null ? `${status.baseline_yield.toFixed(2)}%` : '–'}</dd>
-          </div>
-          <div>
-            <dt className="label">Flagged lots</dt>
+            <dt className="muted">Flagged lots</dt>
             <dd className={status.flagged_lots ? 'alarm' : undefined}>{status.flagged_lots}</dd>
           </div>
           <div>
-            <dt className="label">Open work orders</dt>
+            <dt className="muted">Open work orders</dt>
             <dd className={status.open_work_orders ? 'warn' : undefined}>{status.open_work_orders}</dd>
-          </div>
-          <div>
-            <dt className="label">Model</dt>
-            <dd className="muted">{status.model ?? 'none'}</dd>
           </div>
         </dl>
       )}
-      <button type="button" className="btn btn-small" onClick={onTheme} aria-label={`Theme: ${theme}. Change theme`}>
-        {theme === 'system' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
+      <button type="button" className="btn btn-small" onClick={onTheme} aria-label={`Theme: ${THEME_LABEL[theme]}. Change theme`}>
+        {THEME_LABEL[theme]}
       </button>
     </header>
   )

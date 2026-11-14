@@ -1,0 +1,15 @@
+# Static demo of FabCopilot on Netlify: replays a recorded investigation in the browser
+# (Netlify can't run the Python backend). Rebuild the recording with
+#   cd backend && python -m scripts.export_demo
+[build]
+  base = "frontend"
+  command = "npm run build:demo"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -43,12 +43,12 @@ export function Composer({
         send()
       }}
     >
-      <label className="label" htmlFor={id}>
+      <label className="visually-hidden" htmlFor={id}>
         {label}
       </label>
       <textarea
         id={id}
-        rows={compact ? 2 : 3}
+        rows={compact ? 1 : 2}
         value={text}
         placeholder={placeholder}
         onChange={(e) => setText(e.target.value)}
@@ -56,14 +56,11 @@ export function Composer({
         disabled={disabled}
         autoFocus={autoFocus}
       />
-      <div className="composer-foot">
-        <span className="muted">
-          {compact ? 'Read-only. Work orders need a person to approve them.' : 'Enter to send · Shift+Enter for a new line'}
-        </span>
-        <button type="submit" className="btn btn-primary" disabled={disabled || !text.trim()}>
-          Send
-        </button>
-      </div>
+      <button type="submit" className="send" disabled={disabled || !text.trim()} aria-label="Send">
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <path d="M7 12V2M2.5 6.5L7 2l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      </button>
     </form>
   )
 }

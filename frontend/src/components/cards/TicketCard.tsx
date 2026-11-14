@@ -24,12 +24,6 @@ export function TicketCard({ initial, onDecided }: { initial: Ticket; onDecided?
   }
 
   const id = `WO-${String(ticket.id).padStart(4, '0')}`
-  const status =
-    ticket.status === 'DRAFT' ? (
-      <span className="warn">Draft · needs approval</span>
-    ) : (
-      <span className="muted">{ticket.status === 'APPROVED' ? 'Approved' : 'Rejected'}</span>
-    )
   return (
     <Panel
       wide
@@ -39,28 +33,27 @@ export function TicketCard({ initial, onDecided }: { initial: Ticket; onDecided?
           Work order <span className="mono">{id}</span>
         </>
       }
-      meta={status}
+      meta={
+        ticket.status === 'DRAFT' ? (
+          <span className="warn">Needs approval</span>
+        ) : (
+          <span className="muted">{ticket.status === 'APPROVED' ? 'Approved' : 'Rejected'}</span>
+        )
+      }
     >
       <div className="ticket">
-        <dl className="ticket-fields">
-          <dt>Chamber</dt>
-          <dd className="mono">{ticket.chamber_id}</dd>
-          <dt>Title</dt>
-          <dd>{ticket.title}</dd>
-          <dt>Details</dt>
-          <dd>{ticket.body}</dd>
-          <dt>Drafted</dt>
-          <dd className="mono muted" style={{ fontSize: 12 }}>
-            FabCopilot · {dateTime(ticket.created_at)}
-          </dd>
-        </dl>
+        <div className="ticket-main">
+          <p className="ticket-title">{ticket.title}</p>
+          <details>
+            <summary className="muted">Details</summary>
+            <p className="ticket-body">{ticket.body}</p>
+            <p className="muted small">Drafted by FabCopilot · {dateTime(ticket.created_at)}</p>
+          </details>
+        </div>
         <div className="ticket-decide">
           {ticket.status === 'DRAFT' ? (
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-            >
-              <label className="label" htmlFor={`by-${ticket.id}`}>
+            <form onSubmit={(e) => e.preventDefault()}>
+              <label className="visually-hidden" htmlFor={`by-${ticket.id}`}>
                 Decide as
               </label>
               <input
@@ -70,28 +63,18 @@ export function TicketCard({ initial, onDecided }: { initial: Ticket; onDecided?
                 placeholder="Your name"
                 autoComplete="name"
               />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={busy || !by.trim()}
-                  onClick={() => decide('approve')}
-                >
-                  Approve
-                </button>
-                <button type="button" className="btn" disabled={busy || !by.trim()} onClick={() => decide('reject')}>
-                  Reject
-                </button>
-              </div>
-              {error && <p className="alarm">{error}</p>}
-              <p className="muted" style={{ fontSize: 12 }}>
-                FabCopilot can draft, never approve. Your decision is written to the audit log.
-              </p>
+              <button type="button" className="btn btn-primary" disabled={busy || !by.trim()} onClick={() => decide('approve')}>
+                Approve
+              </button>
+              <button type="button" className="btn" disabled={busy || !by.trim()} onClick={() => decide('reject')}>
+                Reject
+              </button>
+              {error && <p className="alarm small">{error}</p>}
             </form>
           ) : (
             <p>
-              {ticket.status === 'APPROVED' ? 'Approved' : 'Rejected'} by {ticket.decided_by} ·{' '}
-              <span className="mono">{ticket.decided_at && dateTime(ticket.decided_at).slice(11)}</span>
+              {ticket.status === 'APPROVED' ? 'Approved' : 'Rejected'} by {ticket.decided_by}
+              {ticket.decided_at && <span className="mono muted"> · {dateTime(ticket.decided_at).slice(11)}</span>}
             </p>
           )}
         </div>

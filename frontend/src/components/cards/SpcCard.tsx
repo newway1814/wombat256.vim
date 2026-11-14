@@ -28,20 +28,17 @@ export function SpcCard({ result }: { result: Result }) {
       label={`SPC chart ${result.chamber_id}`}
       title={
         <>
-          SPC · <span className="mono">{result.chamber_id}</span> · {p.name}
+          <span className="mono">{result.chamber_id}</span> · {p.name}
         </>
       }
       meta={
-        <>
-          spc_chart · X-bar per lot visit ·{' '}
-          {result.out_of_control ? (
-            <span className="alarm">
-              {after} point{after === 1 ? '' : 's'} out of control
-            </span>
-          ) : (
-            'in control'
-          )}
-        </>
+        result.out_of_control ? (
+          <span className="alarm">
+            {after} point{after === 1 ? '' : 's'} out of control
+          </span>
+        ) : (
+          'in control'
+        )
       }
     >
       <div className="panel-body" style={{ overflowX: 'auto' }}>

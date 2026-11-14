@@ -3,47 +3,24 @@ import { Panel } from './Panel'
 
 interface Hit {
   chunk_id: string
-  doc_id: string
   doc_title: string
-  heading: string
   text: string
-  score: number
 }
 
-export function SourcesCard({ result, cited }: { result: { query: string; hits: Hit[] }; cited: Set<string> }) {
+export function SourcesCard({ result, cited }: { result: { hits: Hit[] }; cited: Set<string> }) {
+  // Cited sources first; the rest are what the search also found.
+  const hits = [...result.hits].sort((a, b) => Number(cited.has(b.chunk_id)) - Number(cited.has(a.chunk_id)))
   return (
-    <Panel wide label="Sources" title="Sources" meta={`search_docs · "${result.query}"`}>
-      <ol style={{ listStyle: 'none', margin: 0, padding: '0 12px 4px' }}>
-        {result.hits.map((h, i) => (
-          <li
-            key={h.chunk_id}
-            id={sourceAnchor(h.chunk_id)}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(120px, 140px) minmax(0, 1fr) auto',
-              gap: 12,
-              alignItems: 'baseline',
-              padding: '8px 0',
-              borderTop: i ? '1px solid var(--grid)' : 0,
-            }}
-          >
-            <span className="mono" style={{ fontSize: 12 }}>
-              {h.chunk_id}
-            </span>
-            <span>
-              <span style={{ fontWeight: 500 }}>{h.doc_title}</span>
-              <span className="muted">
-                {' '}
-                · {h.heading} · {h.text.slice(0, 180)}
-                {h.text.length > 180 ? '…' : ''}
-              </span>
-            </span>
-            <span className="mono muted" style={{ fontSize: 12 }}>
-              {cited.has(h.chunk_id) ? 'cited' : h.score.toFixed(2)}
-            </span>
+    <Panel wide label="Sources" title="Sources" meta={cited.size ? `${cited.size} cited` : undefined}>
+      <ul className="sources">
+        {hits.map((h) => (
+          <li key={h.chunk_id} id={sourceAnchor(h.chunk_id)} className={cited.has(h.chunk_id) ? 'cited' : undefined} title={h.text}>
+            <span className="mono">{h.chunk_id}</span>
+            <span>{h.doc_title.replace(/^[A-Z]+-[\w-]+ /, '')}</span>
+            {cited.has(h.chunk_id) && <span className="tag">cited</span>}
           </li>
         ))}
-      </ol>
+      </ul>
     </Panel>
   )
 }

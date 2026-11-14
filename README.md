@@ -22,6 +22,10 @@ indexes the manuals (about 15 s). Without a key it runs in demo mode. To use a r
 `OPENAI_API_KEY=...` or `GEMINI_API_KEY=...` and `LLM_PROVIDER=auto` in a `.env` file next to
 `docker-compose.yml`. To run without Docker, see [Run it locally](#run-it-locally).
 
+**Static demo (Netlify).** `netlify.toml` builds `npm run build:demo`: the screen with no backend,
+replaying a recorded demo-mode investigation (real tool results on the fake fab) in the browser.
+Approvals and the audit log work in memory. Re-record with `python -m scripts.export_demo`.
+
 ## How it works
 
 ```mermaid
