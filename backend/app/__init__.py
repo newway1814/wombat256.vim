@@ -7,6 +7,7 @@ from .config import Config
 from .db import init_db, make_engine, make_session_factory
 from .errors import register_error_handlers
 from .rag.embed import make_embedder
+from .web import RateLimiter, setup_cors
 
 
 def create_app(config: type[Config] | None = None) -> Flask:
@@ -29,4 +30,6 @@ def create_app(config: type[Config] | None = None) -> Flask:
 
     app.register_blueprint(api_bp, url_prefix="/api")
     register_error_handlers(app)
+    setup_cors(app)
+    app.extensions["chat_limiter"] = RateLimiter(app.config["CHAT_LIMIT_PER_HOUR"], 3600)
     return app

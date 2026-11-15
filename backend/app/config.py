@@ -22,6 +22,10 @@ class Config:
         "GEMINI_FALLBACK_MODELS", "gemini-flash-latest,gemini-3.1-flash-lite"
     )
     DEMO_STEP_DELAY = float(os.getenv("DEMO_STEP_DELAY", "0.6"))
+    # Public deployment: which sites may call the API ("*" for any), and how many chat
+    # questions one visitor may ask per hour (0 = no limit).
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
+    CHAT_LIMIT_PER_HOUR = int(os.getenv("CHAT_LIMIT_PER_HOUR", "0"))
     EMBEDDER = os.getenv("EMBEDDER", "auto")
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "")
 

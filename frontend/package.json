@@ -10,8 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "e2e": "playwright test",
-    "build:demo": "VITE_STATIC_DEMO=1 vite build"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

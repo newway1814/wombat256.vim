@@ -17,4 +17,6 @@ EXPOSE 5000
 
 # Fill the database on first start, then serve. Threads keep long streaming chats from
 # blocking other requests.
-CMD ["sh", "-c", "python -m scripts.bootstrap && exec gunicorn -b 0.0.0.0:5000 -w 2 -k gthread --threads 8 --timeout 300 wsgi:app"]
+# PORT is set by hosts such as Render; 5000 otherwise. One worker keeps the chat rate limit in
+# one place; threads serve concurrent requests.
+CMD ["sh", "-c", "python -m scripts.bootstrap && exec gunicorn -b 0.0.0.0:${PORT:-5000} -w 1 -k gthread --threads 16 --timeout 600 wsgi:app"]

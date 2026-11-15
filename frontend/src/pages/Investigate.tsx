@@ -62,7 +62,8 @@ export function Investigate({ onChanged, demo }: { onChanged: () => void; demo?:
           </div>
           {demo && (
             <p className="muted small">
-              Demo: replays a recorded investigation on synthetic fab data, whatever you ask.
+              Demo mode: no AI key is set, so a scripted model runs the real tools on synthetic fab
+              data, and always investigates the same yield drop.
             </p>
           )}
         </div>

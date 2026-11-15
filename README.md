@@ -22,9 +22,27 @@ indexes the manuals (about 15 s). Without a key it runs in demo mode. To use a r
 `OPENAI_API_KEY=...` or `GEMINI_API_KEY=...` and `LLM_PROVIDER=auto` in a `.env` file next to
 `docker-compose.yml`. To run without Docker, see [Run it locally](#run-it-locally).
 
-**Static demo (Netlify).** `netlify.toml` builds `npm run build:demo`: the screen with no backend,
-replaying a recorded demo-mode investigation (real tool results on the fake fab) in the browser.
-Approvals and the audit log work in memory. Re-record with `python -m scripts.export_demo`.
+
+## Deploy it (Netlify + Render)
+
+The screen is a static site and the API is a Python server, so they're hosted separately.
+Both platforms deploy straight from this repository; no tokens or code changes are needed.
+
+1. **API on Render** (free). Render → New → Blueprint → this repository, branch
+   `claude/github-repo-setup-tiskb2`. It reads `render.yaml`, builds `backend/Dockerfile`
+   and asks for `GEMINI_API_KEY`. When it's live, note its address, e.g.
+   `https://fabcopilot-api.onrender.com`, and check `/api/health` answers.
+2. **Screen on Netlify.** Netlify → Add new site → Import from GitHub → this repository and
+   branch. `netlify.toml` sets the build. Before deploying, add the environment variable
+   `VITE_API_URL` = the Render address from step 1.
+3. **Lock it down** (optional): in Render set `CORS_ORIGINS` to your Netlify address instead
+   of `*`.
+
+Good to know: Render's free plan sleeps after 15 idle minutes, so the first question after a
+pause waits about a minute while it wakes. The database is rebuilt from the seed on each
+start, so work orders don't survive a restart. Each visitor may ask 5 questions an hour
+(`CHAT_LIMIT_PER_HOUR`) to protect the model quota; on Gemini's free tier the quota is small,
+and the screen says so plainly when it runs out.
 
 ## How it works
 

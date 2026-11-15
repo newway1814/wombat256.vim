@@ -99,9 +99,11 @@ export function useInvestigation(onFinished?: () => void) {
       } catch (err) {
         if ((err as Error).name === 'AbortError') return
         const message =
-          err instanceof ApiError && err.code === 'no_model'
-            ? `${err.message} For a demo without a key, start the backend with LLM_PROVIDER=demo.`
-            : `Could not reach the agent: ${(err as Error).message}`
+          err instanceof ApiError
+            ? err.code === 'no_model'
+              ? `${err.message} For a demo without a key, start the backend with LLM_PROVIDER=demo.`
+              : err.message
+            : `Could not reach the server. It may be starting up (free hosting sleeps when idle); try again in a minute.`
         dispatch({ type: 'fail', message })
       } finally {
         onFinished?.()

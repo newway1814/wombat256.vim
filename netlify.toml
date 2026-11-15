@@ -1,9 +1,10 @@
-# Static demo of FabCopilot on Netlify: replays a recorded investigation in the browser
-# (Netlify can't run the Python backend). Rebuild the recording with
-#   cd backend && python -m scripts.export_demo
+# The FabCopilot screen on Netlify. The API runs separately (see render.yaml), because
+# Netlify can't run a Python server. Set VITE_API_URL in Netlify's site settings
+# (Site configuration -> Environment variables) to the API's address, for example
+#   https://fabcopilot-api.onrender.com
 [build]
   base = "frontend"
-  command = "npm run build:demo"
+  command = "npm run build"
   publish = "dist"
 
 [build.environment]

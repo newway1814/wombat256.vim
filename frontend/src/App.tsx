@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, STATIC_DEMO } from './api/client'
+import { api } from './api/client'
 import type { Status } from './api/types'
 import { Header, type View } from './components/Header'
 import { AuditLog } from './pages/AuditLog'
@@ -48,11 +48,11 @@ export default function App() {
         status={status}
         theme={theme}
         onTheme={() => setTheme(NEXT_THEME[theme])}
-        demo={STATIC_DEMO}
+        demo={status?.model?.startsWith('demo') ?? false}
       />
       {/* Investigate stays mounted so a running investigation survives a look at another tab. */}
       <div style={{ display: view === 'investigate' ? 'contents' : 'none' }}>
-        <Investigate onChanged={refresh} demo={STATIC_DEMO} />
+        <Investigate onChanged={refresh} demo={status?.model?.startsWith('demo') ?? false} />
       </div>
       {view === 'lots' && <Lots baseline={status?.baseline_yield ?? null} />}
       {view === 'tickets' && <WorkOrders onChanged={refresh} />}
