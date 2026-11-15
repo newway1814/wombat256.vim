@@ -30,6 +30,11 @@ def create_app(config: type[Config] | None = None) -> Flask:
 
     app.register_blueprint(api_bp, url_prefix="/api")
     register_error_handlers(app)
+
+    @app.get("/")
+    def index():
+        return {"service": "FabCopilot API", "health": "/api/health", "status": "/api/status"}
+
     setup_cors(app)
     app.extensions["chat_limiter"] = RateLimiter(app.config["CHAT_LIMIT_PER_HOUR"], 3600)
     return app

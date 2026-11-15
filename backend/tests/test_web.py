@@ -57,3 +57,8 @@ def test_chat_rate_limit_per_visitor():
 )
 def test_model_errors_are_explained_plainly(message, expected):
     assert expected in friendly_error(RuntimeError(message))
+
+
+def test_root_explains_where_the_api_is(client):
+    body = client.get("/").get_json()
+    assert body["service"] == "FabCopilot API" and body["health"] == "/api/health"
