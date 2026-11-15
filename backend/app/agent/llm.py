@@ -7,6 +7,7 @@ Neutral messages:
 """
 
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -218,24 +219,31 @@ class GeminiChat:
 
 
 def make_llm(provider: str, config: dict) -> LLM | None:
-    """provider: "openai", "gemini", "demo" (no key, scripted), or "auto" (whichever key is
-    set; OpenAI first)."""
+    """provider: "openai", "gemini", "demo", "none", or "auto" (whichever key is set, OpenAI
+    first; with no key, the demo model).
+
+    A provider whose key is missing falls back to the demo model with a warning, so a deployment
+    with a forgotten or empty key still starts instead of crashing.
+    """
+    provider = (provider or "auto").strip().lower()
+    openai_key = (config.get("OPENAI_API_KEY") or "").strip()
+    gemini_key = (config.get("GEMINI_API_KEY") or "").strip()
+    if provider == "none":
+        return None
     if provider == "auto":
-        if config.get("OPENAI_API_KEY"):
-            provider = "openai"
-        elif config.get("GEMINI_API_KEY"):
-            provider = "gemini"
-        else:
-            return None
+        provider = "openai" if openai_key else "gemini" if gemini_key else "demo"
+    if provider == "openai" and not openai_key or provider == "gemini" and not gemini_key:
+        logging.getLogger(__name__).warning(
+            "LLM_PROVIDER=%s but its API key is empty; using the demo model instead", provider
+        )
+        provider = "demo"
     if provider == "openai":
-        return OpenAIChat(config["OPENAI_API_KEY"], config["OPENAI_CHAT_MODEL"])
+        return OpenAIChat(openai_key, config["OPENAI_CHAT_MODEL"])
     if provider == "gemini":
         fallbacks = [m for m in config.get("GEMINI_FALLBACK_MODELS", "").split(",") if m.strip()]
-        return GeminiChat(config["GEMINI_API_KEY"], config["GEMINI_CHAT_MODEL"], fallbacks)
+        return GeminiChat(gemini_key, config["GEMINI_CHAT_MODEL"], fallbacks)
     if provider == "demo":
         from .demo import DemoLLM
 
         return DemoLLM(float(config.get("DEMO_STEP_DELAY", 0.6)))
-    if provider == "none":
-        return None
     raise ValueError(f"unknown LLM provider {provider!r}")

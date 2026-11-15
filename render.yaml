@@ -13,7 +13,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false            # you type it in Render; it is never in the repository
       - key: LLM_PROVIDER
-        value: gemini
+        value: auto            # Gemini when GEMINI_API_KEY is set; demo model if it's empty
       - key: EMBEDDER
         value: hashing         # offline search: no embedding quota used at start-up
       - key: DATABASE_URL

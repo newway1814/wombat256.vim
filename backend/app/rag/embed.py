@@ -107,8 +107,8 @@ class GeminiEmbedder:
 def make_embedder(kind: str, config: dict | None = None) -> Embedder:
     """kind: "openai", "gemini", "hashing", or "auto" (whichever key is set, else hashing)."""
     config = config or {}
-    openai_key = config.get("OPENAI_API_KEY", "")
-    gemini_key = config.get("GEMINI_API_KEY", "")
+    openai_key = (config.get("OPENAI_API_KEY") or "").strip()
+    gemini_key = (config.get("GEMINI_API_KEY") or "").strip()
     model = config.get("EMBEDDING_MODEL") or None
     if kind == "auto":
         kind = "openai" if openai_key else "gemini" if gemini_key else "hashing"
