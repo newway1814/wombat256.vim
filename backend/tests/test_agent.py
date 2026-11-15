@@ -358,3 +358,15 @@ def test_missing_key_falls_back_to_demo_instead_of_crashing():
     # And the app itself starts with an empty key.
     app = create_app(type("Cfg", (TestConfig,), {"LLM_PROVIDER": "gemini", "GEMINI_API_KEY": ""}))
     assert app.test_client().get("/api/status").get_json()["model"] == "demo/scripted"
+
+
+def test_unknown_provider_uses_auto_and_never_logs_the_value(caplog):
+    from app.agent.demo import DemoLLM
+    from app.agent.llm import make_llm
+
+    secret = "AQ.not-a-provider-but-a-key"
+    base = {"OPENAI_CHAT_MODEL": "m", "GEMINI_CHAT_MODEL": "m", "DEMO_STEP_DELAY": 0}
+    with caplog.at_level("WARNING"):
+        llm = make_llm(secret, base)
+    assert isinstance(llm, DemoLLM)
+    assert secret.lower() not in caplog.text.lower()

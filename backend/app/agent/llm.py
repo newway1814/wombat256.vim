@@ -230,6 +230,12 @@ def make_llm(provider: str, config: dict) -> LLM | None:
     gemini_key = (config.get("GEMINI_API_KEY") or "").strip()
     if provider == "none":
         return None
+    if provider not in ("auto", "openai", "gemini", "demo"):
+        # Never echo the value: a key pasted into the wrong setting would end up in the logs.
+        logging.getLogger(__name__).warning(
+            "LLM_PROVIDER is not one of auto, openai, gemini, demo, none; using auto"
+        )
+        provider = "auto"
     if provider == "auto":
         provider = "openai" if openai_key else "gemini" if gemini_key else "demo"
     if provider == "openai" and not openai_key or provider == "gemini" and not gemini_key:
@@ -246,4 +252,4 @@ def make_llm(provider: str, config: dict) -> LLM | None:
         from .demo import DemoLLM
 
         return DemoLLM(float(config.get("DEMO_STEP_DELAY", 0.6)))
-    raise ValueError(f"unknown LLM provider {provider!r}")
+    raise AssertionError("unreachable")

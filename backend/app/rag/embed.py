@@ -122,4 +122,4 @@ def make_embedder(kind: str, config: dict | None = None) -> Embedder:
         return GeminiEmbedder(gemini_key, model or "gemini-embedding-001")
     if kind == "hashing":
         return HashingEmbedder()
-    raise ValueError(f"unknown embedder {kind!r}")
+    raise ValueError("EMBEDDER must be one of auto, openai, gemini, hashing")
