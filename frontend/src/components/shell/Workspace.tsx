@@ -45,6 +45,7 @@ function tabTitle(tab: Tab, convs: Conversation[]): string {
 export function Workspace({
   tabs,
   active,
+  bump,
   convs,
   width,
   expanded,
@@ -58,6 +59,7 @@ export function Workspace({
 }: {
   tabs: Tab[]
   active: string | null
+  bump: number
   convs: Conversation[]
   width: number
   expanded: boolean
@@ -117,7 +119,7 @@ export function Workspace({
           </svg>
         </button>
       </div>
-      <div className="ws-body" key={tab ? tabKey(tab) : 'none'}>
+      <div className="ws-body" key={`${tab ? tabKey(tab) : 'none'}:${bump}`}>
         {tab ? <TabView tab={tab} convs={convs} onTicket={onTicket} onOpen={onOpen} /> : null}
       </div>
     </aside>

@@ -23,5 +23,11 @@ export const tabKey = (t: Tab): string => {
   }
 }
 
-export const WorkspaceContext = createContext<{ open: (t: Tab) => void }>({ open: () => {} })
+export interface WorkspaceApi {
+  open: (t: Tab) => void
+  /** True when this tab is the one on screen in the side panel. */
+  showing: (t: Tab) => boolean
+  hide: () => void
+}
+export const WorkspaceContext = createContext<WorkspaceApi>({ open: () => {}, showing: () => false, hide: () => {} })
 export const useWorkspace = () => useContext(WorkspaceContext)

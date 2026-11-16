@@ -23,6 +23,12 @@ test('ask, watch the panel fill, open evidence, approve, find the chat again', a
   await expect(panel.getByText(/54 of 55 bad wafers went through ETCH-03-B/)).toBeVisible()
   await expect(panel.getByRole('img', { name: 'Wafer map of L2610040-04' })).toBeVisible()
 
+  // The evidence button is a toggle: the trace is showing, so it hides it, then brings it back.
+  await chat.getByRole('button', { name: 'Hide evidence', exact: true }).click()
+  await expect(page.locator('.ws-wrap')).not.toHaveClass(/open/)
+  await chat.getByRole('button', { name: 'Show evidence', exact: true }).click()
+  await expect(panel.locator('.thread .beat')).toHaveCount(9)
+
   // A step in the panel opens to its raw result.
   await panel.getByRole('button', { name: /^find_commonality/ }).click()
   await expect(panel.locator('.beat-raw')).toContainText('"chamber_id": "ETCH-03-B"')

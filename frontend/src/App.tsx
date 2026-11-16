@@ -20,6 +20,7 @@ interface Panel {
   tabs: Tab[]
   active: string | null
   open: boolean
+  bump?: number // grows each time a tab is asked for, so the panel visibly answers
 }
 const CLOSED: Panel = { tabs: [], active: null, open: false }
 
@@ -85,10 +86,16 @@ export default function App() {
     setPanels((all) => {
       const p = all[tab.convId] ?? CLOSED
       const tabs = p.tabs.some((t) => tabKey(t) === key) ? p.tabs : [...p.tabs, tab]
-      return { ...all, [tab.convId]: { tabs, active: key, open: true } }
+      return { ...all, [tab.convId]: { tabs, active: key, open: true, bump: (p.bump ?? 0) + 1 } }
     })
   }, [])
-  const workspace = useMemo(() => ({ open: openTab }), [openTab])
+  const showing = useCallback((tab: Tab) => showPanel && panel.active === tabKey(tab), [showPanel, panel.active])
+  const hide = useCallback(() => {
+    if (!activeId) return
+    setExpanded(false)
+    setPanels((all) => ({ ...all, [activeId]: { ...(all[activeId] ?? CLOSED), open: false } }))
+  }, [activeId])
+  const workspace = useMemo(() => ({ open: openTab, showing, hide }), [openTab, showing, hide])
 
   const resize = (w: number) => {
     const side = collapsed ? 56 : 260
@@ -205,6 +212,7 @@ export default function App() {
             <Workspace
               tabs={panel.tabs}
               active={panel.active}
+              bump={panel.bump ?? 0}
               convs={convs}
               width={width}
               expanded={expanded}

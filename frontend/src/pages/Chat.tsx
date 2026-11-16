@@ -112,7 +112,9 @@ export function Chat({
 }
 
 function TurnView({ convId, turn, running }: { convId: string; turn: Turn; running: boolean }) {
-  const { open } = useWorkspace()
+  const { open, showing, hide } = useWorkspace()
+  const trace = { kind: 'trace' as const, convId, turnId: turn.id }
+  const shown = showing(trace)
   const [copied, setCopied] = useState(false)
   const ticket = turn.steps.find((s) => s.name === 'draft_work_order' && s.status === 'ok')?.result as unknown as
     | Ticket
@@ -172,8 +174,8 @@ function TurnView({ convId, turn, running }: { convId: string; turn: Turn; runni
                 </svg>
               )}
             </button>
-            <button type="button" className="textlink" onClick={() => open({ kind: 'trace', convId, turnId: turn.id })}>
-              Show evidence
+            <button type="button" className="textlink" aria-pressed={shown} onClick={() => (shown ? hide() : open(trace))}>
+              {shown ? 'Hide evidence' : 'Show evidence'}
             </button>
           </div>
         </div>
