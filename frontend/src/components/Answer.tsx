@@ -21,11 +21,13 @@ export function Answer({ text }: { text: string }) {
           <button type="button" className="toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? 'Hide evidence' : `Show evidence (${items.length})`}
           </button>
-          <ul className={`evidence${open ? ' open' : ''}`} hidden={!open}>
-            {items.map((l, j) => (
-              <li key={j}>{inline(l)}</li>
-            ))}
-          </ul>
+          {open && (
+            <ul className="evidence open">
+              {items.map((l, j) => (
+                <li key={j}>{inline(l)}</li>
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>

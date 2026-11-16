@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('ask, watch the workspace fill, open a lot, approve the work order', async ({ page }) => {
+test('ask, watch the thread grow, open a lot, approve the work order', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'What should we look into?' })).toBeVisible()
 
@@ -8,26 +8,26 @@ test('ask, watch the workspace fill, open a lot, approve the work order', async 
   await question.fill('Yield dropped on recent lots. Find the cause and recommend an action.')
   await question.press('Enter')
 
-  // The workspace opens and cards arrive while the agent is still working.
-  const workspace = page.getByRole('region', { name: 'Workspace', exact: true })
-  await expect(workspace).toBeVisible()
+  // The thread starts at once, and steps arrive while the agent is still working.
+  await expect(page.getByRole('heading', { name: /Yield dropped on recent lots/ })).toBeVisible()
+  await expect(page.locator('.beat.running').first()).toBeVisible()
   await expect(page.getByRole('region', { name: 'Flagged lots' })).toBeVisible()
-  await expect(page.getByText('… running').or(page.getByText('Choosing the next step…'))).toBeVisible()
 
-  // The final answer names the culprit and cites a source.
+  // The verdict names the culprit; the evidence and its citation are a tap away.
   await expect(page.getByText('ETCH-03-B is the common cause.')).toBeVisible({ timeout: 30_000 })
-  await expect(page.locator('.trace li')).toHaveCount(9)
+  await expect(page.locator('.thread .beat')).toHaveCount(9)
   await page.getByRole('button', { name: /Show evidence/ }).click()
   await expect(page.getByRole('link', { name: /SOP-ETCH-001#\d+/ })).toBeVisible()
   await expect(page.getByRole('region', { name: 'SPC chart ETCH-03-B' })).toBeVisible()
-  await expect(page.getByRole('img', { name: /Wafer map of L2610040-04: edge ring/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Wafer map of L2610040-04' })).toBeVisible()
+  await expect(page.getByText(/54 of 55 bad wafers went through ETCH-03-B/)).toBeVisible()
 
-  // A trace line opens to show its raw result.
-  await page.getByRole('button', { name: /find_commonality/ }).click()
-  await expect(page.locator('.trace-detail')).toContainText('"chamber_id": "ETCH-03-B"')
+  // A step opens to show its raw result.
+  await page.getByRole('button', { name: /^find_commonality/ }).click()
+  await expect(page.locator('.beat-raw')).toContainText('"chamber_id": "ETCH-03-B"')
 
-  // Clicking a flagged lot opens it and its worst wafer's map.
-  await page.getByRole('region', { name: 'Flagged lots' }).getByRole('button', { name: 'L2610039' }).click()
+  // Clicking a flagged lot opens its worst wafer's map in place.
+  await page.getByRole('region', { name: 'Flagged lots' }).getByRole('button', { name: /L2610039/ }).click()
   await expect(page.getByRole('region', { name: 'Lot L2610039' })).toBeVisible()
   await expect(page.getByRole('img', { name: /Wafer map of L2610039-/ })).toBeVisible()
 
@@ -36,7 +36,7 @@ test('ask, watch the workspace fill, open a lot, approve the work order', async 
   await expect(approve).toBeDisabled()
   await page.getByLabel('Decide as').fill('J. Kim')
   await approve.click()
-  await expect(page.getByText(/Approved by J\. Kim/)).toBeVisible()
+  await expect(page.getByText(/approved by J\. Kim/)).toBeVisible()
 
   await page.getByRole('button', { name: 'Audit log' }).click()
   const audit = page.getByRole('region', { name: 'Audit log' })
