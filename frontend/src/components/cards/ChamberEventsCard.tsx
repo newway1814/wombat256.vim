@@ -14,12 +14,12 @@ export function ChamberEventsCard({ result }: { result: Result }) {
     ...result.alarms.map((a) => ({ at: a.raised_at, what: a.code, cls: a.severity === 'ALARM' ? 'alarm' : 'warn' })),
   ]
     .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, 5)
+    .slice(0, 4)
   return (
     <Panel
       label={`Events ${result.chamber_id}`}
       title="Recent events"
-      meta={`${result.maintenance.length} PM · ${result.alarm_count} alarms`}
+      meta={`${result.alarm_count} alarms`}
     >
       <ul className="events">
         {events.map((e, i) => (

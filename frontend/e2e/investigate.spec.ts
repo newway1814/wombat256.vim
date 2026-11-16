@@ -17,7 +17,8 @@ test('ask, watch the workspace fill, open a lot, approve the work order', async 
   // The final answer names the culprit and cites a source.
   await expect(page.getByText('ETCH-03-B is the common cause.')).toBeVisible({ timeout: 30_000 })
   await expect(page.locator('.trace li')).toHaveCount(9)
-  await expect(page.getByRole('link', { name: /\[SOP-ETCH-001#\d+\]/ })).toBeVisible()
+  await page.getByRole('button', { name: /Show evidence/ }).click()
+  await expect(page.getByRole('link', { name: /SOP-ETCH-001#\d+/ })).toBeVisible()
   await expect(page.getByRole('region', { name: 'SPC chart ETCH-03-B' })).toBeVisible()
   await expect(page.getByRole('img', { name: /Wafer map of L2610040-04: edge ring/ })).toBeVisible()
 

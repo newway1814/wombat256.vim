@@ -28,7 +28,13 @@ export function WaferMap({ data, die = 12, label }: { data: WaferMapData; die?: 
         {data.dies.map((d) => (
           <div
             key={`${d.x},${d.y}`}
-            style={{ gridColumn: d.x - minX + 1, gridRow: maxY - d.y + 1, background: binColor(d.bin) }}
+            className="die"
+            style={{
+              gridColumn: d.x - minX + 1,
+              gridRow: maxY - d.y + 1,
+              background: binColor(d.bin),
+              animationDelay: `${Math.round(Math.hypot(d.x, d.y) * 28)}ms`,
+            }}
           />
         ))}
       </div>

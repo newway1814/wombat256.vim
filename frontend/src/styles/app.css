@@ -737,3 +737,184 @@ table.data tr.top td:first-child {
     min-height: 0;
   }
 }
+
+/* ---------- Motion ----------
+   One easing for everything; short durations; nothing waits on scroll. */
+:root {
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.home-inner {
+  animation: rise 420ms var(--ease) both;
+}
+.home .suggestions button {
+  transition: color 150ms, border-color 150ms, transform 150ms var(--ease);
+}
+.home .suggestions button:hover {
+  transform: translateY(-1px);
+}
+.workspace {
+  animation: slide-in 420ms var(--ease) both;
+}
+.card-enter {
+  animation: rise 360ms var(--ease) both;
+}
+.question {
+  animation: rise 300ms var(--ease) both;
+}
+.answer {
+  animation: rise 400ms var(--ease) both;
+}
+.trace li {
+  animation: rise 260ms var(--ease) both;
+}
+.page {
+  animation: fade 220ms ease-out both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Running step: a soft pulse; done: the tick pops. */
+.pulse {
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+}
+.tick {
+  display: inline-block;
+  color: var(--good, var(--text));
+  animation: pop 320ms var(--ease) both;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+.working::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.2s steps(4) infinite;
+}
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+/* Wafer dies fill from the centre outwards; the SPC line draws itself. */
+.die {
+  animation: die-in 260ms var(--ease) both;
+}
+@keyframes die-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+.spc-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1100ms var(--ease) 150ms forwards;
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.spc-dot {
+  animation: fade 300ms ease-out both;
+}
+
+/* Layout morph from home to investigation (View Transitions API). */
+::view-transition-group(composer) {
+  animation-duration: 460ms;
+  animation-timing-function: var(--ease);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+}
+
+/* Answer: short by default */
+.answer-head {
+  font-size: 14px;
+}
+.answer .cite {
+  display: inline-block;
+  padding: 0 5px;
+  margin: 0 1px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  text-decoration: none;
+}
+.toggle {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+}
+.toggle:hover {
+  text-decoration: underline;
+}
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.answer .evidence.open {
+  animation: rise 260ms var(--ease) both;
+}
+.card-toggle {
+  margin: 0 16px 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+    transition: none !important;
+  }
+  .spc-line {
+    stroke-dashoffset: 0;
+  }
+}
+
+.answer p + p,
+.answer p + ul,
+.answer ul + p {
+  margin-top: 0;
+}

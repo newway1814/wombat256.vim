@@ -22,10 +22,14 @@ export function Trace({ steps }: { steps: Step[] }) {
                 disabled={s.status === 'running'}
                 onClick={() => setOpen(isOpen ? null : s.id)}
               >
-                <span className="muted">{s.status === 'running' ? '·' : isOpen ? '▾' : '▸'}</span>
+                {s.status === 'running' ? <span className="pulse" aria-hidden="true" /> : <span className="muted">{isOpen ? '▾' : '▸'}</span>}
                 <span className="trace-name">{s.name}</span>
-                {s.status === 'running' && <span className="muted">running…</span>}
-                {s.status === 'ok' && <span className="muted">✓ {s.durationMs} ms</span>}
+                {s.status === 'running' && <span className="muted">running</span>}
+                {s.status === 'ok' && (
+                  <span className="muted">
+                    <span className="tick">✓</span> {s.durationMs} ms
+                  </span>
+                )}
                 {s.status === 'error' && <span className="alarm">✕ failed</span>}
               </button>
               {isOpen && (

@@ -110,7 +110,7 @@ export function Workspace({
           <h2 style={{ fontSize: 14, fontWeight: 600 }}>Workspace</h2>
           <span className="live" aria-live="polite">
             <span className={`live-dot${turn.finished ? '' : ' on'}`} />
-            {turn.finished ? `Complete · ${turn.steps.length} calls` : runningStep ? `Live · ${runningStep.name}` : 'Live · thinking'}
+            {turn.finished ? 'Done' : runningStep ? runningStep.name : 'thinking'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

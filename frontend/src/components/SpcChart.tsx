@@ -81,6 +81,8 @@ export function SpcChart({ points, centre, pmAt, outOfControl, unit, label }: Pr
           </g>
         )}
         <polyline
+          className="spc-line"
+          pathLength={1}
           points={points.map((p, i) => `${x(i)},${y(p.mean)}`).join(' ')}
           fill="none"
           stroke="var(--text)"
@@ -90,6 +92,8 @@ export function SpcChart({ points, centre, pmAt, outOfControl, unit, label }: Pr
         {points.map((p, i) => (
           <circle
             key={i}
+            className="spc-dot"
+            style={{ animationDelay: `${200 + (900 * i) / points.length}ms` }}
             cx={x(i)}
             cy={y(p.mean)}
             r={outOfControl.has(i) ? 3.5 : 2.5}

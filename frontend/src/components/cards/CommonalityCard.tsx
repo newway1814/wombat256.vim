@@ -13,7 +13,7 @@ export function CommonalityCard({ result }: { result: { bad_wafers: number; rank
   const top = result.ranking[0]
   const significant = top && top.p_adjusted < 0.01
   return (
-    <Panel label="Commonality" title="Shared chamber" meta={`${result.bad_wafers} bad wafers`}>
+    <Panel label="Commonality" title="Shared chamber">
       {top && significant && (
         <div className="headline">
           <span className="mono big">{top.chamber_id}</span>

@@ -1,24 +1,33 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { sourceAnchor } from '../domain'
 
-/** Renders the agent's plain-text answer: paragraphs, "- " lists, and [CHUNK#n] citations. */
+/** The agent's answer, shortest first: the finding, then the action. The evidence list and
+ * other detail fold under a toggle. Citations ([CHUNK#n]) become links to the sources card. */
 export function Answer({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
   const blocks = text.trim().split(/\n\s*\n/)
+  const isList = (b: string) => b.split('\n').every((l) => /^\s*[-*] /.test(l))
+  const [headline, ...rest] = blocks
+  const action = rest.filter((b) => !isList(b)).pop()
+  const detail = rest.filter((b) => b !== action)
+  const items = detail.flatMap((b) => (isList(b) ? b.split('\n').map((l) => l.replace(/^\s*[-*] /, '')) : [b]))
+
   return (
     <div className="answer">
-      {blocks.map((block, i) => {
-        const lines = block.split('\n')
-        if (lines.every((l) => /^\s*[-*] /.test(l))) {
-          return (
-            <ul key={i}>
-              {lines.map((l, j) => (
-                <li key={j}>{inline(l.replace(/^\s*[-*] /, ''))}</li>
-              ))}
-            </ul>
-          )
-        }
-        return <p key={i}>{inline(block)}</p>
-      })}
+      <p className="answer-head">{inline(headline)}</p>
+      {action && <p>{inline(action)}</p>}
+      {items.length > 0 && (
+        <>
+          <button type="button" className="toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+            {open ? 'Hide evidence' : `Show evidence (${items.length})`}
+          </button>
+          <ul className={`evidence${open ? ' open' : ''}`} hidden={!open}>
+            {items.map((l, j) => (
+              <li key={j}>{inline(l)}</li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
@@ -29,7 +38,7 @@ function inline(text: string): ReactNode[] {
     if (!m) return part.replace(/\*\*/g, '').replace(/ -> /g, ' → ')
     return (
       <a key={i} className="cite" href={`#${sourceAnchor(m[1])}`}>
-        [{m[1]}]
+        {m[1]}
       </a>
     )
   })

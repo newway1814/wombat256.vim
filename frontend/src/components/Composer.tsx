@@ -38,6 +38,7 @@ export function Composer({
   return (
     <form
       className={`composer${compact ? ' compact' : ''}`}
+      style={{ viewTransitionName: 'composer' }}
       onSubmit={(e) => {
         e.preventDefault()
         send()

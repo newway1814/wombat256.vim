@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Answer } from '../components/Answer'
 import { Composer } from '../components/Composer'
 import { Trace } from '../components/Trace'
@@ -17,7 +18,7 @@ function TurnView({ turn, running }: { turn: Turn; running: boolean }) {
     <div className="turn">
       <p className="msg-text question">{turn.question}</p>
       <Trace steps={turn.steps} />
-      {running && !turn.answer && <p className="muted">Working…</p>}
+      {running && !turn.answer && <p className="muted working">Working</p>}
       {turn.answer && <Answer text={turn.answer} />}
       {turn.notice && <p className="notice">{turn.notice}</p>}
     </div>
@@ -35,9 +36,17 @@ export function Investigate({ onChanged, demo }: { onChanged: () => void; demo?:
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [turns])
 
+  // Pressing Enter on the home screen morphs the layout (the question box glides into the
+  // conversation panel) with the View Transitions API where the browser has it.
   const start = (q: string) => {
-    setPanel(true)
-    void ask(q)
+    const go = () => {
+      setPanel(true)
+      void ask(q)
+    }
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown }
+    const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (!last && doc.startViewTransition && !calm) doc.startViewTransition(() => flushSync(go))
+    else go()
   }
 
   if (!last) {
