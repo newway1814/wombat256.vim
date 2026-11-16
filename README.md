@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/newway1814/wombat256.vim/actions/workflows/ci.yml/badge.svg?branch=claude/github-repo-setup-tiskb2)](https://github.com/newway1814/wombat256.vim/actions/workflows/ci.yml)
 
+**Live demo: [fab-copilot.netlify.app](https://fab-copilot.netlify.app/)** (the API runs on Render's free plan, so the first question after a quiet spell can take about a minute while it wakes up).
+
 An AI copilot for semiconductor yield engineers. Ask why yield dropped, and an agent
 investigates a synthetic 300 mm fab: it flags the low lots, finds the chamber the bad wafers
 share, reads the wafer maps and the chamber's sensor chart, cites the SOP and a past
