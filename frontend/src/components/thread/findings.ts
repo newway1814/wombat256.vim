@@ -66,3 +66,17 @@ export function finding(name: string, r: any): string {
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** What the agent is doing while a tool runs. */
+export const DOING: Record<string, string> = {
+  check_lot_yields: 'Checking lot yields',
+  find_commonality: 'Looking for a shared chamber',
+  get_lot: 'Opening the lot',
+  classify_wafer_map: 'Reading the wafer map',
+  spc_chart: 'Drawing the SPC chart',
+  compare_around_pm: 'Comparing before and after the PM',
+  get_chamber_events: 'Reading the chamber history',
+  search_docs: 'Searching the manuals',
+  draft_work_order: 'Drafting a work order',
+  run_sql: 'Querying the database',
+}

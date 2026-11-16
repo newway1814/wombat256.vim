@@ -1,5 +1,7 @@
 export const clock = (d: Date) => d.toTimeString().slice(0, 8)
 
+export const woName = (id: number) => `WO-${String(id).padStart(4, '0')}`
+
 export const pct = (v: number, digits = 1) => `${v.toFixed(digits)}%`
 
 /** p-values: tiny ones in scientific notation, the rest with two decimals. */

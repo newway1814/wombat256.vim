@@ -8,32 +8,38 @@ import { pValue, shortDate } from '../../format'
 import { SpcChart } from '../SpcChart'
 import { WaferMap } from '../WaferMap'
 
-/** Flagged lots placed on a yield scale, with the baseline and the limit marked. */
+/** Flagged lots as rows on one shared yield scale, with the limit and the baseline marked. */
 export function LotStrip({ r, onOpen }: { r: any; onOpen: (id: string) => void }) {
   const ys = r.flagged.map((f: any) => f.yield_pct)
   const lo = Math.floor(Math.min(...ys, r.limit) - 2)
-  const hi = Math.ceil(r.baseline_yield + 2)
+  const hi = Math.ceil(r.baseline_yield + 1)
   const at = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`
   return (
-    <div className="strip" role="group" aria-label="Flagged lots by yield">
-      <div className="strip-axis" />
-      <span className="strip-mark" style={{ left: at(r.limit) }}>
-        <span>limit {r.limit.toFixed(1)}%</span>
-      </span>
-      <span className="strip-mark base" style={{ left: at(r.baseline_yield) }}>
-        <span>baseline {r.baseline_yield.toFixed(1)}%</span>
-      </span>
+    <div className="lotrows" role="group" aria-label="Flagged lots by yield">
+      <p className="lotrows-key mono">
+        <span>
+          <i className="dash" /> limit {r.limit.toFixed(1)}%
+        </span>
+        <span>
+          <i className="solid" /> baseline {r.baseline_yield.toFixed(1)}%
+        </span>
+      </p>
       {r.flagged.map((f: any, i: number) => (
         <button
           key={f.id}
           type="button"
-          className={`strip-dot ${i % 2 ? 'below' : 'above'}`}
-          style={{ left: at(f.yield_pct), animationDelay: `${120 + i * 90}ms` }}
+          className="lotrow"
+          style={{ animationDelay: `${80 + i * 70}ms` }}
           onClick={() => onOpen(f.id)}
           aria-label={`${f.id}, ${f.yield_pct.toFixed(1)}% yield`}
         >
           <span className="mono">{f.id}</span>
-          <span className="muted">{f.yield_pct.toFixed(1)}%</span>
+          <span className="lotrow-track">
+            <span className="lotrow-fill" style={{ width: at(f.yield_pct) }} />
+            <span className="lotrow-mark dash" style={{ left: at(r.limit) }} />
+            <span className="lotrow-mark solid" style={{ left: at(r.baseline_yield) }} />
+          </span>
+          <span className="mono">{f.yield_pct.toFixed(1)}%</span>
         </button>
       ))}
     </div>
@@ -104,12 +110,18 @@ export function BeforeAfter({ r, unit }: { r: any; unit: string }) {
   )
 }
 
-export function Sources({ r, cited }: { r: any; cited: Set<string> }) {
+export function Sources({ r, cited, onOpen }: { r: any; cited: Set<string>; onOpen?: (chunkId: string) => void }) {
   return (
     <ul className="srcs">
       {r.hits.map((h: any) => (
-        <li key={h.chunk_id} className={cited.has(h.chunk_id) ? 'cited' : undefined} title={h.text}>
-          <span className="mono">{h.chunk_id}</span>
+        <li key={h.chunk_id} className={cited.has(h.chunk_id) ? 'cited' : undefined}>
+          {onOpen ? (
+            <button type="button" className="linkish mono" onClick={() => onOpen(h.chunk_id)}>
+              {h.chunk_id}
+            </button>
+          ) : (
+            <span className="mono">{h.chunk_id}</span>
+          )}
           <span>{h.doc_title.replace(/^[A-Z]+-[\w-]+ /, '')}</span>
         </li>
       ))}

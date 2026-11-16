@@ -13,6 +13,9 @@
   --warn: #a86400;
   --on-text: #ffffff;
   --die-pass: #c9cdd2;
+  --side: #e9ebed;
+  --hover: rgb(20 24 28 / 0.06);
+  --bubble: #e4e7ea;
 
   /* Wafer fail bins: Okabe-Ito, colourblind-safe */
   --bin-2: #0072b2;
@@ -44,6 +47,9 @@
     --warn: #e8a23a;
     --on-text: #101214;
     --die-pass: #3a4047;
+    --side: #0b0d0e;
+    --hover: rgb(255 255 255 / 0.06);
+    --bubble: #23282d;
     color-scheme: dark;
   }
 }
@@ -62,5 +68,8 @@
   --warn: #e8a23a;
   --on-text: #101214;
   --die-pass: #3a4047;
+  --side: #0b0d0e;
+  --hover: rgb(255 255 255 / 0.06);
+  --bubble: #23282d;
   color-scheme: dark;
 }

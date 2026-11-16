@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { api } from '../../api/client'
 import type { LotDetail } from '../../api/types'
 import { PARAMS } from '../../domain'
-import type { Step } from '../../hooks/useInvestigation'
+import type { Step } from '../../hooks/useConversations'
 import { finding, TOOL_LABEL } from './findings'
 import { BeforeAfter, ChamberBars, EventLine, LotStrip, LotView, Sources, SpcView, WaferView } from './visuals'
 
 /** One step of the investigation: the tool, one plain sentence, and its picture. */
-export function Beat({ step, cited }: { step: Step; cited: Set<string> }) {
+export function Beat({ step, cited, onSource }: { step: Step; cited: Set<string>; onSource?: (chunkId: string) => void }) {
   const [raw, setRaw] = useState(false)
   const [lot, setLot] = useState<LotDetail | null>(null)
   const [wafer, setWafer] = useState<string | null>(null)
@@ -71,7 +71,7 @@ export function Beat({ step, cited }: { step: Step; cited: Set<string> }) {
         visual = <EventLine r={r} />
         break
       case 'search_docs':
-        visual = <Sources r={r} cited={cited} />
+        visual = <Sources r={r} cited={cited} onOpen={onSource} />
         break
     }
   }
