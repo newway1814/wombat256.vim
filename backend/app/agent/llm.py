@@ -105,18 +105,18 @@ def gemini_client(api_key: str):
     return genai.Client(
         api_key=api_key,
         http_options=types.HttpOptions(
-            timeout=60_000,
+            timeout=30_000,
             retry_options=types.HttpRetryOptions(
-                attempts=5,
-                initial_delay=2.0,
-                max_delay=20.0,
+                attempts=3,
+                initial_delay=1.0,
+                max_delay=4.0,
                 http_status_codes=[429, 500, 503, 504],
             ),
         ),
     )
 
 
-def call_with_quota_wait(fn, attempts: int = 4):
+def call_with_quota_wait(fn, attempts: int = 2, max_wait: float = 15.0):
     """Run a Gemini call; on a 429 quota error wait as long as the API says, then retry."""
     import re
     import time
@@ -130,7 +130,10 @@ def call_with_quota_wait(fn, attempts: int = 4):
             if e.code != 429 or attempt == attempts - 1:
                 raise
             m = re.search(r"retry in ([\d.]+)s", str(e))
-            time.sleep(min(float(m.group(1)) + 1 if m else 30.0, 70.0))
+            wait = float(m.group(1)) + 1 if m else 10.0
+            if wait > max_wait:
+                raise  # a long quota wait (e.g. a daily limit): fail fast with a clear message
+            time.sleep(wait)
     raise RuntimeError("unreachable")
 
 
@@ -143,7 +146,8 @@ class GeminiChat:
         self.served_by: set[str] = set()  # which models actually answered
 
     def _generate(self, contents, config):
-        """Try the main model, then each fallback, when a model stays overloaded (5xx)."""
+        """Try the main model, then each fallback, when a model is overloaded (5xx) or out of
+        quota (429): on Gemini's free tier every model has its own quota."""
         from google.genai import errors
 
         last: Exception | None = None
@@ -156,7 +160,11 @@ class GeminiChat:
                 )
                 self.served_by.add(model)
                 return resp
-            except errors.ServerError as e:
+            except errors.ServerError as e:  # overloaded: try the next model
+                last = e
+            except errors.ClientError as e:  # out of quota: each model has its own
+                if e.code != 429:
+                    raise
                 last = e
         assert last is not None
         raise last

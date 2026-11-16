@@ -98,7 +98,9 @@ class GeminiEmbedder:
             resp = call_with_quota_wait(
                 lambda chunk=texts[i : i + self.batch]: self.client.models.embed_content(
                     model=self.model, contents=chunk
-                )
+                ),
+                attempts=4,
+                max_wait=70.0,  # indexing runs at start-up, so waiting out a minute limit is fine
             )
             rows.extend(e.values for e in resp.embeddings)
         return _normalise(np.asarray(rows, dtype=np.float32))
