@@ -9,6 +9,8 @@ investigates a synthetic 300 mm fab: it flags the low lots, finds the chamber th
 share, reads the wafer maps and the chamber's sensor chart, cites the SOP and a past
 maintenance case, and drafts a work order that only a person can approve.
 
+**Live demo: [fab-copilot.netlify.app](https://fab-copilot.netlify.app)** (the API runs on Render's free plan, so the first question after a quiet spell can take about a minute while it wakes).
+
 ![Asking FabCopilot why yield dropped: the workspace fills live, then the work order is approved](docs/demo.gif)
 
 *Demo mode, no API key: real tools on real (synthetic) data; only the model's decisions are scripted.*
