@@ -132,6 +132,16 @@ def test_search_endpoint(indexed):
     assert {"chunk_id", "doc_id", "doc_title", "heading", "text", "score"} == set(body["hits"][0])
 
 
+def test_document_endpoint(indexed):
+    body = indexed.test_client().get("/api/docs/SOP-ETCH-001").get_json()
+    assert body["kind"] == "SOP"
+    assert body["title"].startswith("SOP-ETCH-001")
+    ids = [x["chunk_id"] for x in body["sections"]]
+    assert ids == sorted(ids, key=lambda i: int(i.split("#")[1]))
+    assert len(ids) == len(set(ids)) > 3
+    assert indexed.test_client().get("/api/docs/SOP-NOPE-999").status_code == 404
+
+
 @pytest.mark.parametrize("query", ["q=", "q=%20", "q=x&k=0", f"q={'a' * 501}"])
 def test_search_endpoint_bad_input(indexed, query):
     assert indexed.test_client().get(f"/api/docs/search?{query}").status_code == 400

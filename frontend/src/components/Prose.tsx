@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react'
+import { CHUNK_ID } from '../domain'
 
 export type EntityKind = 'cite' | 'lot' | 'chamber'
 /** Returns a click handler when the entity can be opened in the side panel, else null. */
 export type Resolve = (kind: EntityKind, id: string) => (() => void) | null
 
-const TOKEN = /(\[[A-Z]+-[\w-]+#\d+\]|\*\*[^*]+\*\*|`[^`]+`|\bL\d{7}(?:-\d{2})?\b|\b[A-Z]{3,6}-\d{2}-[A-Z]\b)/g
+const ID = CHUNK_ID.source
+// Citations however the model brackets them: [A#1], [A#1, B#2], (A#1) or a bare A#1.
+const CITES = `[\\[(（【]\\s*${ID}(?:\\s*[,;]\\s*${ID})*\\s*[\\])）】]|${ID}`
+const TOKEN = new RegExp(
+  `(${CITES}|\\*\\*[^*]+\\*\\*|\`[^\`]+\`|\\bL\\d{7}(?:-\\d{2})?\\b|\\b[A-Z]{3,6}-\\d{2}-[A-Z]\\b)`,
+  'g',
+)
 
 /** The agent's answer as plain reading text: paragraphs, lists and bold lead-ins, with
  * citations, lots and chambers turned into links that open the evidence beside the chat. */
@@ -53,18 +60,20 @@ function inline(text: string, resolve: Resolve): ReactNode[] {
           {part.slice(1, -1)}
         </code>
       )
-    const cite = part.match(/^\[([A-Z]+-[\w-]+#\d+)\]$/)
-    if (cite) {
-      const go = resolve('cite', cite[1])
-      return go ? (
-        <button key={i} type="button" className="cite" onClick={go}>
-          {cite[1]}
-        </button>
-      ) : (
-        <span key={i} className="cite static">
-          {cite[1]}
-        </span>
-      )
+    const ids = part.match(CHUNK_ID)
+    if (ids && !part.startsWith('**')) {
+      return ids.map((id, j) => {
+        const go = resolve('cite', id)
+        return go ? (
+          <button key={`${i}-${j}`} type="button" className="cite" onClick={go} title="Open the cited passage">
+            {id}
+          </button>
+        ) : (
+          <span key={`${i}-${j}`} className="cite static">
+            {id}
+          </span>
+        )
+      })
     }
     const kind: EntityKind | null = /^L\d{7}/.test(part) ? 'lot' : /^[A-Z]{3,6}-\d{2}-[A-Z]$/.test(part) ? 'chamber' : null
     if (kind) {

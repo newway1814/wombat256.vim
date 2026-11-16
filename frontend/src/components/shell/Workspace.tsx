@@ -9,6 +9,8 @@ import { Approval } from '../chat/Approval'
 import { Beat } from '../thread/Beat'
 import { TOOL_LABEL } from '../thread/findings'
 import { LotView } from '../thread/visuals'
+import { citedIds } from '../../domain'
+import { DocView } from './DocView'
 
 export const MIN_WIDTH = 340
 
@@ -17,7 +19,7 @@ function find(convs: Conversation[], convId: string, turnId: string) {
   return { conv, turn: conv?.turns.find((t) => t.id === turnId) }
 }
 
-const citedIn = (turn: Turn) => new Set([...(turn.answer ?? '').matchAll(/\[([A-Z]+-[\w-]+#\d+)\]/g)].map((m) => m[1]))
+const citedIn = (turn: Turn) => citedIds(turn.answer ?? '')
 
 function tabTitle(tab: Tab, convs: Conversation[]): string {
   switch (tab.kind) {
@@ -144,7 +146,14 @@ function TabView({
       .flatMap((t) => t.steps)
       .find((s) => s.name === 'draft_work_order' && (s.result as any)?.id === tab.ticketId)
     if (!step) return <p className="ws-empty">This chat was deleted.</p>
-    return <Approval ticket={step.result as unknown as Ticket} onDecided={(t) => onTicket(tab.convId, t)} />
+    const turnId = conv!.turns.find((t) => t.steps.includes(step))!.id
+    return (
+      <Approval
+        ticket={step.result as unknown as Ticket}
+        onDecided={(t) => onTicket(tab.convId, t)}
+        onCite={(chunkId) => onOpen({ kind: 'source', convId: tab.convId, turnId, chunkId })}
+      />
+    )
   }
   const { turn } = find(convs, tab.convId, tab.turnId)
   if (!turn) return <p className="ws-empty">This chat was deleted.</p>
@@ -186,40 +195,14 @@ function TabView({
     )
   }
 
-  // A cited passage from the manuals or logs.
-  const hits = turn.steps.filter((s) => s.name === 'search_docs' && s.status === 'ok').flatMap((s) => (s.result as any).hits)
-  const hit = hits.find((h: any) => h.chunk_id === tab.chunkId)
-  return (
-    <div className="ws-pad">
-      <p className="ws-kicker mono">{tab.chunkId}</p>
-      {hit ? (
-        <>
-          <h2 className="ws-title">{hit.doc_title}</h2>
-          {cited.has(tab.chunkId) && <p className="ws-note">Cited in the answer</p>}
-          <div className="passage">{hit.text}</div>
-          {hits.length > 1 && (
-            <>
-              <p className="ws-kicker">Also retrieved</p>
-              <ul className="srcs">
-                {hits
-                  .filter((h: any) => h.chunk_id !== tab.chunkId)
-                  .map((h: any) => (
-                    <li key={h.chunk_id} className={cited.has(h.chunk_id) ? 'cited' : undefined}>
-                      <button type="button" className="linkish mono" onClick={() => openSource(h.chunk_id)}>
-                        {h.chunk_id}
-                      </button>
-                      <span>{h.doc_title.replace(/^[A-Z]+-[\w-]+ /, '')}</span>
-                    </li>
-                  ))}
-              </ul>
-            </>
-          )}
-        </>
-      ) : (
-        <p className="ws-empty">The agent cited this passage, but it was not in what the search returned.</p>
-      )}
-    </div>
+  // A cited passage, shown inside its whole document.
+  const retrieved = new Map<string, number>(
+    turn.steps
+      .filter((s) => s.name === 'search_docs' && s.status === 'ok')
+      .flatMap((s) => (s.result as any).hits)
+      .map((h: any) => [h.chunk_id, h.score]),
   )
+  return <DocView key={tab.chunkId} chunkId={tab.chunkId} cited={cited} retrieved={retrieved} onOpen={openSource} />
 }
 
 function LotTab({ lotId }: { lotId: string }) {

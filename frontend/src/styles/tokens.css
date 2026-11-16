@@ -16,6 +16,8 @@
   --side: #e9ebed;
   --hover: rgb(20 24 28 / 0.06);
   --bubble: #e4e7ea;
+  --hl: rgb(255 214 10 / 0.22);
+  --hl-edge: #d4a106;
 
   /* Wafer fail bins: Okabe-Ito, colourblind-safe */
   --bin-2: #0072b2;
@@ -50,6 +52,8 @@
     --side: #0b0d0e;
     --hover: rgb(255 255 255 / 0.06);
     --bubble: #23282d;
+    --hl: rgb(255 204 0 / 0.12);
+    --hl-edge: #e0b000;
     color-scheme: dark;
   }
 }
@@ -71,5 +75,7 @@
   --side: #0b0d0e;
   --hover: rgb(255 255 255 / 0.06);
   --bubble: #23282d;
+  --hl: rgb(255 204 0 / 0.12);
+  --hl-edge: #e0b000;
   color-scheme: dark;
 }

@@ -33,12 +33,17 @@ test('ask, watch the panel fill, open evidence, approve, find the chat again', a
   await panel.getByRole('button', { name: /^find_commonality/ }).click()
   await expect(panel.locator('.beat-raw')).toContainText('"chamber_id": "ETCH-03-B"')
 
-  // A citation in the answer opens the cited passage as a new tab.
+  // A citation in the answer opens its document as a new tab...
   const cite = chat.locator('button.cite').first()
   const chunk = (await cite.textContent())!
   await cite.click()
   await expect(panel.getByRole('tab', { name: chunk })).toHaveAttribute('aria-selected', 'true')
-  await expect(panel.locator('.passage')).toBeVisible()
+  // ...inside the whole document, scrolled to and highlighted.
+  const target = panel.locator('.doc-sec[aria-current="location"]')
+  await expect(target).toHaveClass(/hl/)
+  await expect(target).toBeInViewport()
+  await expect(target).toHaveAttribute('aria-label', new RegExp(`^${chunk.replace('#', '#')} `))
+  expect(await panel.locator('.doc-sec').count()).toBeGreaterThan(3)
 
   // A chamber in the answer opens its SPC chart.
   await chat.locator('button.entity', { hasText: 'ETCH-03-B' }).first().click()

@@ -2,6 +2,7 @@ import type {
   AgentEvent,
   AuditEntry,
   ChatMessage,
+  DocDetail,
   LotDetail,
   LotSummary,
   Status,
@@ -47,6 +48,7 @@ export const api = {
   lots: (limit = 50) => request<{ items: LotSummary[]; total: number }>(`/lots?limit=${limit}`),
   lot: (id: string) => request<LotDetail>(`/lots/${encodeURIComponent(id)}`),
   waferMap: (id: string) => request<WaferMap>(`/wafers/${encodeURIComponent(id)}/map`),
+  doc: (id: string) => request<DocDetail>(`/docs/${encodeURIComponent(id)}`),
   tickets: () => request<{ items: Ticket[] }>('/tickets'),
   audit: (limit = 100) => request<{ items: AuditEntry[] }>(`/audit?limit=${limit}`),
   decide: (id: number, decision: 'approve' | 'reject', by: string) =>

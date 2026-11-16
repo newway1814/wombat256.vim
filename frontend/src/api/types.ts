@@ -65,6 +65,13 @@ export interface AuditEntry {
   detail: Record<string, unknown>
 }
 
+export interface DocDetail {
+  doc_id: string
+  title: string
+  kind: string
+  sections: { chunk_id: string; heading: string; text: string }[]
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string

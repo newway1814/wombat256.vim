@@ -9,3 +9,8 @@ def search_docs():
     k = fab.parse_int(request.args.get("k"), "k", 5, 1, 20)
     embedder = current_app.extensions["embedder"]
     return jsonify(docs.search_docs(db(), embedder, request.args.get("q", ""), k))
+
+
+@api_bp.get("/docs/<doc_id>")
+def get_document(doc_id: str):
+    return jsonify(docs.get_document(db(), doc_id))

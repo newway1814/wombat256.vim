@@ -15,7 +15,7 @@ export const tabKey = (t: Tab): string => {
     case 'step':
       return `step:${t.stepId}`
     case 'source':
-      return `source:${t.turnId}:${t.chunkId}`
+      return `source:${t.turnId}:${t.chunkId.split('#')[0]}` // one tab per document
     case 'lot':
       return `lot:${t.lotId}`
     case 'wo':

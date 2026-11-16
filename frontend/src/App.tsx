@@ -85,7 +85,8 @@ export default function App() {
     const key = tabKey(tab)
     setPanels((all) => {
       const p = all[tab.convId] ?? CLOSED
-      const tabs = p.tabs.some((t) => tabKey(t) === key) ? p.tabs : [...p.tabs, tab]
+      // An open tab for the same thing is reused (a document jumps to the newly cited section).
+      const tabs = p.tabs.some((t) => tabKey(t) === key) ? p.tabs.map((t) => (tabKey(t) === key ? tab : t)) : [...p.tabs, tab]
       return { ...all, [tab.convId]: { tabs, active: key, open: true, bump: (p.bump ?? 0) + 1 } }
     })
   }, [])

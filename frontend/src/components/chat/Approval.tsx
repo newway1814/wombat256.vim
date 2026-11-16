@@ -5,7 +5,15 @@ import { dateTime, woName } from '../../format'
 import { Prose } from '../Prose'
 
 /** A drafted work order and the human decision on it. The agent can only draft. */
-export function Approval({ ticket, onDecided }: { ticket: Ticket; onDecided: (t: Ticket) => void }) {
+export function Approval({
+  ticket,
+  onDecided,
+  onCite,
+}: {
+  ticket: Ticket
+  onDecided: (t: Ticket) => void
+  onCite?: (chunkId: string) => void
+}) {
   const [by, setBy] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +37,7 @@ export function Approval({ ticket, onDecided }: { ticket: Ticket; onDecided: (t:
       </p>
       <h2 className="wo-title">{ticket.title}</h2>
       <div className="wo-body">
-        <Prose text={ticket.body} resolve={() => null} />
+        <Prose text={ticket.body} resolve={(kind, id) => (kind === 'cite' && onCite ? () => onCite(id) : null)} />
       </div>
       {ticket.status === 'DRAFT' ? (
         <form className="wo-decide" onSubmit={(e) => e.preventDefault()}>
