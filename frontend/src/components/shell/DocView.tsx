@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api } from '../../api/client'
+import { api, ApiError } from '../../api/client'
 import type { DocDetail } from '../../api/types'
 import { docOf } from '../../domain'
 
@@ -9,16 +9,18 @@ export function DocView({
   chunkId,
   cited,
   retrieved,
+  hits,
   onOpen,
 }: {
   chunkId: string
   cited: Set<string>
   retrieved: Map<string, number> // chunk id → similarity score
+  hits: { chunk_id: string; doc_id: string; doc_title: string; heading: string; text: string }[]
   onOpen: (chunkId: string) => void
 }) {
   const docId = docOf(chunkId)
   const [doc, setDoc] = useState<DocDetail | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ missing: boolean } | null>(null)
   const target = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export function DocView({
     api
       .doc(docId)
       .then((d) => live && setDoc(d))
-      .catch((e: Error) => live && setError(e.message))
+      .catch((e: Error) => live && setError({ missing: e instanceof ApiError && e.status === 404 }))
     return () => {
       live = false
     }
@@ -34,37 +36,58 @@ export function DocView({
 
   // Bring the cited passage into view once the document is on screen.
   useEffect(() => {
-    if (doc) target.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  }, [doc, chunkId])
+    if (doc || error) target.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [doc, error, chunkId])
 
-  if (error)
+  // If the full document can't be fetched (an older API, the server waking up), fall back to
+  // the passages the search already returned in this answer, so a citation always opens.
+  const local = hits.filter((h) => h.doc_id === docId)
+  const shown: DocDetail | null =
+    doc ??
+    (error && local.length
+      ? {
+          doc_id: docId,
+          title: local[0].doc_title,
+          kind: docId.startsWith('SOP-') ? 'SOP' : 'Maintenance log',
+          sections: [...local]
+            .sort((a, b) => Number(a.chunk_id.split('#')[1]) - Number(b.chunk_id.split('#')[1]))
+            .map((h) => ({ chunk_id: h.chunk_id, heading: h.heading, text: h.text })),
+        }
+      : null)
+
+  if (error && !shown)
     return (
       <div className="ws-pad">
         <p className="ws-kicker mono">{chunkId}</p>
-        <p className="alarm">
-          The agent cited {chunkId}, but there is no such document in the library. Treat that claim as unsupported.
-        </p>
+        {error.missing ? (
+          <p className="alarm">
+            The agent cited {chunkId}, but there is no such document in the library. Treat that claim as unsupported.
+          </p>
+        ) : (
+          <p className="muted">Could not load {docId} right now. The server may be waking up; try again in a moment.</p>
+        )}
       </div>
     )
-  if (!doc) return <p className="ws-empty">Opening {docId}…</p>
+  if (!shown) return <p className="ws-empty">Opening {docId}…</p>
 
-  const found = doc.sections.some((s) => s.chunk_id === chunkId)
+  const found = shown.sections.some((s) => s.chunk_id === chunkId)
   return (
     <div className="ws-pad doc">
       <p className="ws-kicker">
-        {doc.kind} · <span className="mono">{doc.doc_id}</span>
+        {shown.kind} · <span className="mono">{shown.doc_id}</span>
       </p>
-      <h2 className="ws-title">{doc.title.replace(`${doc.doc_id} `, '')}</h2>
+      <h2 className="ws-title">{shown.title.replace(`${shown.doc_id} `, '')}</h2>
       <p className="doc-key">
         <span className="doc-swatch hl" /> cited in the answer
         <span className="doc-swatch rt" /> retrieved by search
       </p>
+      {!doc && <p className="muted small">Showing the passages the search returned; the full document could not be loaded.</p>}
       {!found && (
         <p className="alarm small">
-          The agent cited {chunkId}, but {doc.doc_id} has no such section. Treat that claim as unsupported.
+          The agent cited {chunkId}, but {shown.doc_id} has no such section. Treat that claim as unsupported.
         </p>
       )}
-      {doc.sections.map((s) => {
+      {shown.sections.map((s) => {
         const here = s.chunk_id === chunkId
         const isCited = cited.has(s.chunk_id)
         const score = retrieved.get(s.chunk_id)

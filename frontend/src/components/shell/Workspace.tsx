@@ -196,13 +196,11 @@ function TabView({
   }
 
   // A cited passage, shown inside its whole document.
-  const retrieved = new Map<string, number>(
-    turn.steps
-      .filter((s) => s.name === 'search_docs' && s.status === 'ok')
-      .flatMap((s) => (s.result as any).hits)
-      .map((h: any) => [h.chunk_id, h.score]),
-  )
-  return <DocView key={tab.chunkId} chunkId={tab.chunkId} cited={cited} retrieved={retrieved} onOpen={openSource} />
+  const hits = turn.steps
+    .filter((s) => s.name === 'search_docs' && s.status === 'ok')
+    .flatMap((s) => (s.result as any).hits ?? [])
+  const retrieved = new Map<string, number>(hits.map((h: any) => [h.chunk_id, h.score]))
+  return <DocView key={tab.chunkId} chunkId={tab.chunkId} cited={cited} retrieved={retrieved} hits={hits} onOpen={openSource} />
 }
 
 function LotTab({ lotId }: { lotId: string }) {

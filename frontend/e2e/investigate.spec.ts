@@ -92,3 +92,20 @@ test('fits a phone screen without sideways scrolling', async ({ page }) => {
   await page.getByRole('button', { name: 'Show evidence' }).click()
   await expect(page.getByRole('complementary', { name: 'Evidence' }).locator('.thread .beat')).toHaveCount(9)
 })
+
+test('a citation still opens when the API cannot serve the whole document', async ({ page }) => {
+  // An older or waking API: the document endpoint fails, search results are all we have.
+  await page.route(/\/api\/docs\/(SOP|MLOG)-/, (route) =>
+    route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":{"code":"not_found","message":"Not found"}}' }),
+  )
+  await page.goto('/')
+  await page.getByLabel('Question').fill('Yield dropped on recent lots. Find the cause and recommend an action.')
+  await page.getByLabel('Question').press('Enter')
+  const chat = page.getByRole('main')
+  await expect(chat.getByText('ETCH-03-B is the common cause.')).toBeVisible({ timeout: 30_000 })
+  await chat.locator('button.cite').first().click()
+  const panel = page.getByRole('complementary', { name: 'Evidence' })
+  const target = panel.locator('.doc-sec[aria-current="location"]')
+  await expect(target).toHaveClass(/hl/)
+  await expect(panel.getByText(/unsupported/)).toHaveCount(0)
+})
