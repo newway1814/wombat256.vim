@@ -138,11 +138,6 @@ export function Sidebar({
           <Icon d={I.theme} />
           <span className="side-label">{THEME_LABEL[theme]}</span>
         </button>
-        {status?.model && (
-          <p className="side-model side-label mono" title="Model serving the agent">
-            {status.model}
-          </p>
-        )}
       </div>
     </nav>
   )
